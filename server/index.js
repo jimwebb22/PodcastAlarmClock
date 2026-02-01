@@ -1,5 +1,6 @@
 const express = require('express');
 const cors = require('cors');
+const path = require('path');
 require('dotenv').config();
 const { initDatabase } = require('./db/database');
 const authRoutes = require('./api/auth');
@@ -22,6 +23,15 @@ app.use('/api/auth', authRoutes);
 app.use('/api/speakers', speakersRoutes);
 app.use('/api/alarm', alarmRoutes);
 app.use('/api/podcasts', podcastsRoutes);
+
+// Serve React build in production
+if (process.env.NODE_ENV === 'production') {
+  app.use(express.static(path.join(__dirname, '../client/build')));
+  // Catch-all handler for SPA routing
+  app.use((req, res) => {
+    res.sendFile(path.join(__dirname, '../client/build/index.html'));
+  });
+}
 
 // Initialize database before starting server
 initDatabase()

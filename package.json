@@ -9,7 +9,10 @@
   "scripts": {
     "start": "node server/index.js",
     "dev": "nodemon server/index.js",
-    "test": "jest"
+    "test": "jest",
+    "build": "cd client && npm run build",
+    "postinstall": "cd client && npm install",
+    "prod": "NODE_ENV=production node server/index.js"
   },
   "keywords": [],
   "author": "",
