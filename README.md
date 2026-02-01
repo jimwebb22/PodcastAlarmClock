@@ -1,4 +1,4 @@
-# Sonos Alarm Clock
+# Podcast Alarm Clock
 
 A local alarm clock system that plays Spotify podcasts and music through Sonos speakers.
 
@@ -17,7 +17,7 @@ A local alarm clock system that plays Spotify podcasts and music through Sonos s
 2. Log in with your Spotify account (requires Spotify Premium)
 3. Click "Create app"
 4. Fill in:
-   - **App name**: "Sonos Alarm Clock" (or your preferred name)
+   - **App name**: "Podcast Alarm Clock" (or your preferred name)
    - **App description**: "Personal alarm clock system"
    - **Redirect URI**: `http://localhost:3001/api/auth/spotify/callback`
    - **Which API/SDKs are you planning to use?**: Check "Web API"
@@ -100,13 +100,13 @@ A local alarm clock system that plays Spotify podcasts and music through Sonos s
 pm2 status
 
 # View logs
-pm2 logs sonos-alarm-clock
+pm2 logs podcast-alarm-clock
 
 # Restart service
-pm2 restart sonos-alarm-clock
+pm2 restart podcast-alarm-clock
 
 # Stop service
-pm2 stop sonos-alarm-clock
+pm2 stop podcast-alarm-clock
 
 # Start on system boot
 pm2 startup
@@ -116,7 +116,7 @@ pm2 save
 ## Project Structure
 
 ```
-sonos-alarm-clock/
+podcast-alarm-clock/
 ├── server/
 │   ├── api/              # Express API routes
 │   ├── services/         # Spotify, Sonos, scheduler, playlist
@@ -133,7 +133,7 @@ sonos-alarm-clock/
 ### Alarm Not Triggering
 
 - Check PM2 status: `pm2 status`
-- View logs: `pm2 logs sonos-alarm-clock`
+- View logs: `pm2 logs podcast-alarm-clock`
 - Verify alarm is enabled in UI
 - Check that current day is selected
 - Ensure Spotify tokens haven't expired (reconnect if needed)

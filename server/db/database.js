@@ -2,7 +2,7 @@ const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
 const fs = require('fs');
 
-const DB_PATH = process.env.DATABASE_PATH || './sonos-alarm.db';
+const DB_PATH = process.env.DATABASE_PATH || './podcast-alarm.db';
 
 function initDatabase() {
   return new Promise((resolve, reject) => {

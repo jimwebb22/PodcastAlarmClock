@@ -1,5 +1,5 @@
 {
-  "name": "sonos-alarm-clock",
+  "name": "podcast-alarm-clock",
   "version": "1.0.0",
   "description": "A local alarm clock system that plays Spotify podcasts and music through Sonos speakers",
   "main": "index.js",

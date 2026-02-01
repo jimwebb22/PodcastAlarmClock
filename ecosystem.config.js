@@ -1,6 +1,6 @@
 module.exports = {
   apps: [{
-    name: 'sonos-alarm-clock',
+    name: 'podcast-alarm-clock',
     script: 'server/index.js',
     instances: 1,
     autorestart: true,

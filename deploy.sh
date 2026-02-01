@@ -1,11 +1,11 @@
 #!/bin/bash
 
-# Sonos Alarm Clock Deployment Script
+# Podcast Alarm Clock Deployment Script
 # Builds the React app and restarts the PM2 service
 
 set -e
 
-echo "===== Sonos Alarm Clock Deployment ====="
+echo "===== Podcast Alarm Clock Deployment ====="
 echo ""
 
 # Check if PM2 is installed
@@ -38,4 +38,4 @@ echo "===== Deployment Complete ====="
 pm2 status
 echo ""
 echo "Application is running on http://localhost:3001"
-echo "View logs with: pm2 logs sonos-alarm-clock"
+echo "View logs with: pm2 logs podcast-alarm-clock"

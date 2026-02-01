@@ -1,6 +1,6 @@
 # Claude Developer Guide
 
-This document provides context and guidance for Claude (or future developers) working on the Sonos Alarm Clock project.
+This document provides context and guidance for Claude (or future developers) working on the Podcast Alarm Clock project.
 
 ## Project Overview
 
@@ -24,7 +24,7 @@ This document provides context and guidance for Claude (or future developers) wo
 ## Project Structure
 
 ```
-/Users/jimwebb/Documents/Science Projects/Sonos Alarm Clock/.worktrees/implementation/
+/Users/jimwebb/Documents/Science Projects/Podcast Alarm Clock/.worktrees/implementation/
 ├── server/
 │   ├── index.js              # Express server entry point
 │   ├── api/
@@ -61,7 +61,7 @@ This document provides context and guidance for Claude (or future developers) wo
 ├── logs/                     # Application logs (combined.log, error.log)
 ├── .env                      # Environment variables (NOT in git)
 ├── .env.example              # Environment template
-├── sonos-alarm.db            # SQLite database (NOT in git)
+├── podcast-alarm.db            # SQLite database (NOT in git)
 ├── package.json              # Dependencies and scripts
 ├── ecosystem.config.js       # PM2 configuration
 ├── deploy.sh                 # Deployment script
@@ -137,7 +137,7 @@ This document provides context and guidance for Claude (or future developers) wo
 ### Initial Setup
 ```bash
 # Navigate to project directory
-cd "/Users/jimwebb/Documents/Science Projects/Sonos Alarm Clock/.worktrees/implementation"
+cd "/Users/jimwebb/Documents/Science Projects/Podcast Alarm Clock/.worktrees/implementation"
 
 # Install dependencies
 npm install
@@ -171,13 +171,13 @@ npm run deploy
 pm2 status
 
 # View logs
-pm2 logs sonos-alarm
+pm2 logs podcast-alarm
 
 # Restart app
-pm2 restart sonos-alarm
+pm2 restart podcast-alarm
 
 # Stop app
-pm2 stop sonos-alarm
+pm2 stop podcast-alarm
 ```
 
 ### Testing
@@ -190,7 +190,7 @@ tail -f logs/combined.log
 tail -f logs/error.log
 
 # Check PM2 logs
-pm2 logs sonos-alarm --lines 100
+pm2 logs podcast-alarm --lines 100
 ```
 
 ## Common Development Tasks
@@ -206,10 +206,10 @@ pm2 logs sonos-alarm --lines 100
 
 ### Debugging Alarm Issues
 1. Check logs: `tail -f logs/combined.log`
-2. Verify configuration in database: `sqlite3 sonos-alarm.db "SELECT * FROM alarm_config;"`
+2. Verify configuration in database: `sqlite3 podcast-alarm.db "SELECT * FROM alarm_config;"`
 3. Check scheduler status in logs (should show "Scheduling alarm for HH:MM on [days]")
 4. Use "Test Alarm Now" to test without waiting for scheduled time
-5. Check Spotify token expiry: `sqlite3 sonos-alarm.db "SELECT expires_at FROM spotify_auth;"`
+5. Check Spotify token expiry: `sqlite3 podcast-alarm.db "SELECT expires_at FROM spotify_auth;"`
 6. Verify speakers discoverable: Check network, Sonos app
 
 ### Modifying Playlist Logic
@@ -248,7 +248,7 @@ pm2 logs sonos-alarm --lines 100
 - If refresh fails, user must re-authenticate via "Connect Spotify" button
 
 ### Database
-- SQLite database (`sonos-alarm.db`)
+- SQLite database (`podcast-alarm.db`)
 - Single-user, single-alarm design (one row in `alarm_config`)
 - Speaker/podcast selections stored in separate tables
 - Alarm logs table for debugging (`alarm_logs`)
@@ -267,12 +267,12 @@ pm2 logs sonos-alarm --lines 100
 
 This project uses Git worktrees. The working directory is:
 ```
-/Users/jimwebb/Documents/Science Projects/Sonos Alarm Clock/.worktrees/implementation
+/Users/jimwebb/Documents/Science Projects/Podcast Alarm Clock/.worktrees/implementation
 ```
 
 Main repository:
 ```
-/Users/jimwebb/Documents/Science Projects/Sonos Alarm Clock
+/Users/jimwebb/Documents/Science Projects/Podcast Alarm Clock
 ```
 
 When committing:
@@ -306,7 +306,7 @@ See `docs/TESTING.md` for comprehensive testing checklist including:
 **"No speakers discovered"**
 - Verify Sonos speakers on same network as Mac mini
 - Check firewall settings (may block SSDP discovery)
-- Try restarting app: `pm2 restart sonos-alarm`
+- Try restarting app: `pm2 restart podcast-alarm`
 
 **"Spotify authentication failed"**
 - Verify CLIENT_ID and CLIENT_SECRET in .env
@@ -331,7 +331,7 @@ See `docs/TESTING.md` for comprehensive testing checklist including:
 - Verify correct weekdays selected
 - Check system time and timezone
 - Review logs: `tail -f logs/combined.log`
-- Check database: `sqlite3 sonos-alarm.db "SELECT * FROM alarm_config;"`
+- Check database: `sqlite3 podcast-alarm.db "SELECT * FROM alarm_config;"`
 
 **"Playback fails"**
 - Verify Spotify Premium account (required for playback control)
@@ -357,7 +357,7 @@ See `docs/TESTING.md` for comprehensive testing checklist including:
 
 ## Important Reminders
 
-1. **Never commit sensitive files:** `.env`, `sonos-alarm.db`, `node_modules/`
+1. **Never commit sensitive files:** `.env`, `podcast-alarm.db`, `node_modules/`
 2. **Always test with "Test Alarm Now"** before relying on scheduled alarms
 3. **Speaker safety is critical** - verify fallback logic never plays on wrong speakers
 4. **Check logs regularly** - they contain valuable debugging information
@@ -367,12 +367,12 @@ See `docs/TESTING.md` for comprehensive testing checklist including:
 
 ## Getting Help
 
-- Review design document: `docs/plans/2026-02-01-sonos-alarm-clock-design.md`
+- Review design document: `docs/plans/2026-02-01-podcast-alarm-clock-design.md`
 - Check testing checklist: `docs/TESTING.md`
 - Review logs: `logs/combined.log` and `logs/error.log`
-- Check PM2 status: `pm2 status` and `pm2 logs sonos-alarm`
+- Check PM2 status: `pm2 status` and `pm2 logs podcast-alarm`
 - Test endpoints manually: Use curl or Postman to test API routes
-- Database inspection: `sqlite3 sonos-alarm.db` for direct queries
+- Database inspection: `sqlite3 podcast-alarm.db` for direct queries
 
 ## Project Status
 

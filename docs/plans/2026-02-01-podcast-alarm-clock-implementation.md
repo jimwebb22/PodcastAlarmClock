@@ -1,4 +1,4 @@
-# Sonos Alarm Clock Implementation Plan
+# Podcast Alarm Clock Implementation Plan
 
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 
@@ -91,7 +91,7 @@ Expected: `{"status":"ok","timestamp":"..."}`
 
 Create `README.md`:
 ```markdown
-# Sonos Alarm Clock
+# Podcast Alarm Clock
 
 A local alarm clock system that plays Spotify podcasts and music through Sonos speakers.
 
@@ -1650,7 +1650,7 @@ function App() {
     <div className="min-h-screen bg-gray-100">
       <div className="container mx-auto px-4 py-8">
         <h1 className="text-4xl font-bold text-center mb-8">
-          Sonos Alarm Clock
+          Podcast Alarm Clock
         </h1>
         <div className="bg-white rounded-lg shadow-md p-6">
           <p className="text-gray-600">Loading...</p>
@@ -1666,7 +1666,7 @@ export default App;
 **Step 7: Test frontend starts**
 
 Run in client directory: `npm start`
-Expected: Browser opens to http://localhost:3000 with "Sonos Alarm Clock" heading
+Expected: Browser opens to http://localhost:3000 with "Podcast Alarm Clock" heading
 
 **Step 8: Commit**
 
@@ -1808,7 +1808,7 @@ function App() {
     <div className="min-h-screen bg-gray-100">
       <div className="container mx-auto px-4 py-8">
         <h1 className="text-4xl font-bold text-center mb-8">
-          Sonos Alarm Clock
+          Podcast Alarm Clock
         </h1>
 
         <div className="max-w-4xl mx-auto space-y-6">
@@ -2010,7 +2010,7 @@ function App() {
     <div className="min-h-screen bg-gray-100">
       <div className="container mx-auto px-4 py-8">
         <h1 className="text-4xl font-bold text-center mb-8">
-          Sonos Alarm Clock
+          Podcast Alarm Clock
         </h1>
 
         <div className="max-w-4xl mx-auto space-y-6">
@@ -2213,7 +2213,7 @@ function App() {
     <div className="min-h-screen bg-gray-100">
       <div className="container mx-auto px-4 py-8">
         <h1 className="text-4xl font-bold text-center mb-8">
-          Sonos Alarm Clock
+          Podcast Alarm Clock
         </h1>
 
         <div className="max-w-4xl mx-auto space-y-6">
@@ -2481,7 +2481,7 @@ function App() {
     <div className="min-h-screen bg-gray-100">
       <div className="container mx-auto px-4 py-8">
         <h1 className="text-4xl font-bold text-center mb-8">
-          Sonos Alarm Clock
+          Podcast Alarm Clock
         </h1>
 
         <div className="max-w-4xl mx-auto space-y-6">
@@ -2691,7 +2691,7 @@ function App() {
     <div className="min-h-screen bg-gray-100 pb-12">
       <div className="container mx-auto px-4 py-8">
         <h1 className="text-4xl font-bold text-center mb-8">
-          Sonos Alarm Clock
+          Podcast Alarm Clock
         </h1>
 
         <div className="max-w-4xl mx-auto space-y-6">
@@ -2766,7 +2766,7 @@ Create `ecosystem.config.js`:
 ```javascript
 module.exports = {
   apps: [{
-    name: 'sonos-alarm-clock',
+    name: 'podcast-alarm-clock',
     script: './server/index.js',
     env: {
       NODE_ENV: 'production',
@@ -2801,7 +2801,7 @@ echo "Creating logs directory..."
 mkdir -p logs
 
 echo "Starting/restarting app with PM2..."
-pm2 delete sonos-alarm-clock || true
+pm2 delete podcast-alarm-clock || true
 pm2 start ecosystem.config.js
 pm2 save
 
@@ -2822,7 +2822,7 @@ Make executable: `chmod +x deploy.sh`
 
 Update `README.md`:
 ```markdown
-# Sonos Alarm Clock
+# Podcast Alarm Clock
 
 A local alarm clock system that plays Spotify podcasts and music through Sonos speakers.
 
@@ -3001,7 +3001,7 @@ Create `CLAUDE.md`:
 
 ## Project Overview
 
-Sonos Alarm Clock - A Node.js/React app that triggers alarms to play Spotify podcasts through Sonos speakers.
+Podcast Alarm Clock - A Node.js/React app that triggers alarms to play Spotify podcasts through Sonos speakers.
 
 ## Key Files
 
@@ -3071,7 +3071,7 @@ Expected: Clean working directory, all features committed.
 
 ## Completion
 
-All implementation tasks complete! The Sonos Alarm Clock is now ready for deployment.
+All implementation tasks complete! The Podcast Alarm Clock is now ready for deployment.
 
 **Next Steps:**
 

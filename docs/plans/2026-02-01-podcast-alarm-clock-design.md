@@ -1,4 +1,4 @@
-# Sonos Alarm Clock - Design Document
+# Podcast Alarm Clock - Design Document
 
 **Date:** 2026-02-01
 **Status:** Approved
@@ -60,7 +60,7 @@ A custom alarm clock system that plays podcast episodes from Spotify through Son
 ### Application Structure
 
 ```
-sonos-alarm-clock/
+podcast-alarm-clock/
 ├── server/
 │   ├── api/              # Express routes
 │   ├── services/

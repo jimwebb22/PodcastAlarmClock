@@ -55,7 +55,7 @@ Follow the detailed guide in README.md "Getting Spotify Credentials" section.
 ### Step 4: Configure & Test
 ```bash
 # Update .env with real credentials
-# Restart: pm2 restart sonos-alarm-clock
+# Restart: pm2 restart podcast-alarm-clock
 # Open: http://localhost:3001
 # Follow: docs/TESTING.md checklist
 ```
@@ -109,7 +109,7 @@ tail -f logs/combined.log
 sqlite3 sonos-alarm.db "SELECT * FROM alarm_config;"
 
 # Restart server
-pm2 restart sonos-alarm-clock
+pm2 restart podcast-alarm-clock
 
 # Run tests (when implemented)
 npm test

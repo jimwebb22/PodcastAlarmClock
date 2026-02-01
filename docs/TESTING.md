@@ -1,6 +1,6 @@
 # Testing Checklist
 
-This document provides a comprehensive testing checklist for the Sonos Alarm Clock application.
+This document provides a comprehensive testing checklist for the Podcast Alarm Clock application.
 
 ## Backend API Testing
 

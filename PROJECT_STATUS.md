@@ -1,12 +1,12 @@
-# Project Status - Sonos Alarm Clock
+# Project Status - Podcast Alarm Clock
 
 **Last Updated:** 2026-02-01
 **Current Branch:** `feature/initial-implementation`
-**Worktree Location:** `/Users/jimwebb/Documents/Science Projects/Sonos Alarm Clock/.worktrees/implementation`
+**Worktree Location:** `/Users/jimwebb/Documents/Science Projects/Podcast Alarm Clock/.worktrees/implementation`
 
 ## Executive Summary
 
-The Sonos Alarm Clock project is **functionally complete** but awaiting Spotify API credentials to enable full testing. All 15 implementation tasks completed, bugs fixed, UX improved, and documentation finalized.
+The Podcast Alarm Clock project is **functionally complete** but awaiting Spotify API credentials to enable full testing. All 15 implementation tasks completed, bugs fixed, UX improved, and documentation finalized.
 
 **Ready to use once Spotify credentials are obtained.**
 
@@ -16,7 +16,7 @@ The Sonos Alarm Clock project is **functionally complete** but awaiting Spotify 
 
 ### ✅ Completed (15/15 Tasks)
 
-All tasks from `docs/plans/2026-02-01-sonos-alarm-clock-implementation.md` completed:
+All tasks from `docs/plans/2026-02-01-podcast-alarm-clock-implementation.md` completed:
 
 1. ✅ Project setup and structure
 2. ✅ Database initialization (SQLite)
@@ -84,7 +84,7 @@ All tasks from `docs/plans/2026-02-01-sonos-alarm-clock-implementation.md` compl
 **When Credentials Available:**
 1. Follow `README.md` "Getting Spotify Credentials" section
 2. Update `.env` with real `SPOTIFY_CLIENT_ID` and `SPOTIFY_CLIENT_SECRET`
-3. Restart server: `npm start` or `pm2 restart sonos-alarm-clock`
+3. Restart server: `npm start` or `pm2 restart podcast-alarm-clock`
 4. Test OAuth flow at http://localhost:3001
 5. Complete end-to-end testing per `docs/TESTING.md`
 
@@ -244,8 +244,8 @@ c171b4f - fix: map speaker property names between frontend and backend
 ```
 
 ### Worktree Setup
-- Main repo: `/Users/jimwebb/Documents/Science Projects/Sonos Alarm Clock`
-- Worktree: `/Users/jimwebb/Documents/Science Projects/Sonos Alarm Clock/.worktrees/implementation`
+- Main repo: `/Users/jimwebb/Documents/Science Projects/Podcast Alarm Clock`
+- Worktree: `/Users/jimwebb/Documents/Science Projects/Podcast Alarm Clock/.worktrees/implementation`
 - Worktree properly configured and tracked
 
 ---
@@ -275,7 +275,7 @@ cd client && npm start  # Frontend on :3000
 # Production (PM2)
 npm run deploy          # Builds + deploys
 pm2 status              # Check status
-pm2 logs sonos-alarm    # View logs
+pm2 logs podcast-alarm    # View logs
 ```
 
 ---
@@ -287,8 +287,8 @@ pm2 logs sonos-alarm    # View logs
 | `README.md` | User-facing documentation | ✅ Complete with Spotify guide |
 | `CLAUDE.md` | Developer guide for Claude | ✅ Updated with fixes |
 | `PROJECT_STATUS.md` | This file - project handoff | ✅ Complete |
-| `docs/plans/2026-02-01-sonos-alarm-clock-design.md` | Original design document | ✅ Complete |
-| `docs/plans/2026-02-01-sonos-alarm-clock-implementation.md` | 15-task implementation plan | ✅ All tasks done |
+| `docs/plans/2026-02-01-podcast-alarm-clock-design.md` | Original design document | ✅ Complete |
+| `docs/plans/2026-02-01-podcast-alarm-clock-implementation.md` | 15-task implementation plan | ✅ All tasks done |
 | `docs/TESTING.md` | Comprehensive testing checklist | ✅ Complete |
 | `.env.example` | Environment template | ✅ Updated with comments |
 
@@ -331,7 +331,7 @@ pm2 logs sonos-alarm    # View logs
 
 ```bash
 # 1. Navigate to worktree
-cd "/Users/jimwebb/Documents/Science Projects/Sonos Alarm Clock/.worktrees/implementation"
+cd "/Users/jimwebb/Documents/Science Projects/Podcast Alarm Clock/.worktrees/implementation"
 
 # 2. Check server status
 lsof -i:3001  # Should show node process
