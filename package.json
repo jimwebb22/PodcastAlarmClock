@@ -19,6 +19,7 @@
     "cors": "^2.8.6",
     "dotenv": "^17.2.3",
     "express": "^5.2.1",
+    "node-cron": "^4.2.1",
     "node-schedule": "^2.1.1",
     "sonos": "^1.14.2",
     "spotify-web-api-node": "^5.0.2",

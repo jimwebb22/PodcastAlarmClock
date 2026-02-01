@@ -4,6 +4,8 @@ require('dotenv').config();
 const { initDatabase } = require('./db/database');
 const authRoutes = require('./api/auth');
 const speakersRoutes = require('./api/speakers');
+const alarmRoutes = require('./api/alarm');
+const scheduler = require('./services/scheduler');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -17,11 +19,17 @@ app.get('/health', (req, res) => {
 
 app.use('/api/auth', authRoutes);
 app.use('/api/speakers', speakersRoutes);
+app.use('/api/alarm', alarmRoutes);
 
 // Initialize database before starting server
 initDatabase()
-  .then(() => {
+  .then(async () => {
     console.log('Database ready');
+
+    // Initialize scheduler
+    await scheduler.rescheduleAlarm();
+    console.log('Scheduler initialized');
+
     app.listen(PORT, () => {
       console.log(`Server running on port ${PORT}`);
     });
