@@ -311,7 +311,20 @@ See `docs/TESTING.md` for comprehensive testing checklist including:
 **"Spotify authentication failed"**
 - Verify CLIENT_ID and CLIENT_SECRET in .env
 - Check REDIRECT_URI matches Spotify app settings exactly
-- Ensure http://localhost:3001/api/auth/callback is whitelisted in Spotify app
+- Ensure http://localhost:3001/api/auth/spotify/callback is whitelisted in Spotify app
+- If you see "Invalid Client", the .env credentials are likely still placeholders
+
+**"Error Saving Speaker Selection"**
+- FIXED: This was caused by property name mismatch
+- Frontend sends `name`/`uuid` from discovery API
+- Backend expects `speaker_name`/`speaker_uuid` in database
+- Solution: Added property mapping in server/api/speakers.js (lines 11-14, 27-30)
+
+**"Cannot toggle alarm ON"**
+- Ensure at least one weekday is selected
+- Frontend sends boolean for `enabled`, backend now accepts both boolean and number
+- FIXED: Added conversion in server/api/alarm.js (line 21)
+- Will show error message if no days selected (added validation line 42-46)
 
 **"Alarm didn't trigger"**
 - Check alarm enabled (toggle ON)
@@ -326,6 +339,11 @@ See `docs/TESTING.md` for comprehensive testing checklist including:
 - Verify podcast/music selections not empty
 - Check Spotify token hasn't expired (should auto-refresh)
 - Review logs for Sonos/Spotify API errors
+
+**"OAuth redirects away from app"**
+- FIXED: Changed to open in popup window (client/src/components/SpotifyAuth.js lines 23-43)
+- Popup auto-closes after auth completion
+- Main app stays loaded and updates automatically
 
 ## Future Enhancements (Not Yet Implemented)
 
@@ -370,11 +388,33 @@ All core features implemented:
 - ✅ Comprehensive testing checklist
 - ✅ Developer documentation
 
+**Bugs Fixed (Post-Implementation):**
+- ✅ Speaker property name mismatch (frontend `name`/`uuid` vs backend `speaker_name`/`speaker_uuid`)
+- ✅ Alarm toggle validation (now accepts both boolean and number)
+- ✅ OAuth UX improved (popup window instead of same-window redirect)
+
+**Current Blocker:**
+- ⏸️ **Spotify API credentials unavailable** - Spotify Developer Platform is temporarily not accepting new integrations. Once available, follow README.md instructions to obtain Client ID and Client Secret.
+
+**Recent Improvements (2026-02-01):**
+- OAuth opens in popup window with auto-close
+- Better error messages and validation
+- Requires at least one day selected when enabling alarm
+- Enhanced documentation with Spotify setup guide
+- All preparation complete for when credentials become available
+
+**Ready for Testing:**
+- Speaker discovery and selection (working now)
+- Alarm configuration UI (working now)
+- All functionality except Spotify-dependent features
+
 **Next Steps:**
-- Manual testing with real Sonos speakers
-- Deploy to Mac mini
-- Monitor for a week to verify reliability
-- Consider enhancements based on usage
+1. Wait for Spotify API registration to reopen
+2. Obtain Spotify credentials following README.md guide
+3. Complete end-to-end testing with real Spotify account
+4. Manual testing with real Sonos speakers
+5. Deploy to Mac mini for production use
+6. Monitor for a week to verify reliability
 
 ---
 
