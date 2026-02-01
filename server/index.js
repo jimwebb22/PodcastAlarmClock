@@ -5,6 +5,7 @@ const { initDatabase } = require('./db/database');
 const authRoutes = require('./api/auth');
 const speakersRoutes = require('./api/speakers');
 const alarmRoutes = require('./api/alarm');
+const podcastsRoutes = require('./api/podcasts');
 const scheduler = require('./services/scheduler');
 
 const app = express();
@@ -20,6 +21,7 @@ app.get('/health', (req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/speakers', speakersRoutes);
 app.use('/api/alarm', alarmRoutes);
+app.use('/api/podcasts', podcastsRoutes);
 
 // Initialize database before starting server
 initDatabase()
