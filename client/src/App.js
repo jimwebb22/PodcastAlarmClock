@@ -1,6 +1,7 @@
 import React from 'react';
 import './index.css';
 import AlarmStatus from './components/AlarmStatus';
+import AlarmConfig from './components/AlarmConfig';
 
 function App() {
   return (
@@ -12,6 +13,7 @@ function App() {
 
         <div className="max-w-4xl mx-auto space-y-6">
           <AlarmStatus />
+          <AlarmConfig />
         </div>
       </div>
     </div>
