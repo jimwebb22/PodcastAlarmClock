@@ -23,8 +23,27 @@ function SpotifyAuth() {
   const handleConnect = async () => {
     try {
       const res = await spotify.getAuthUrl();
-      // Redirect to Spotify authorization URL
-      window.location.href = res.data.authUrl;
+
+      // Open Spotify auth in popup window
+      const width = 600;
+      const height = 800;
+      const left = window.screen.width / 2 - width / 2;
+      const top = window.screen.height / 2 - height / 2;
+
+      const popup = window.open(
+        res.data.authUrl,
+        'Spotify Authorization',
+        `width=${width},height=${height},left=${left},top=${top},resizable=yes,scrollbars=yes`
+      );
+
+      // Poll for popup closure and auth status
+      const checkInterval = setInterval(async () => {
+        if (popup.closed) {
+          clearInterval(checkInterval);
+          // Check if authentication succeeded
+          await checkAuthStatus();
+        }
+      }, 500);
     } catch (err) {
       console.error('Error getting Spotify auth URL:', err);
     }

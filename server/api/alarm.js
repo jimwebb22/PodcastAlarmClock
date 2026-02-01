@@ -31,8 +31,11 @@ router.put('/config', async (req, res) => {
       music_source
     } = req.body;
 
+    // Convert enabled to number if boolean
+    const enabledValue = typeof enabled === 'boolean' ? (enabled ? 1 : 0) : enabled;
+
     // Basic validation
-    if (!time || typeof enabled !== 'number') {
+    if (!time || (typeof enabledValue !== 'number' && enabledValue !== undefined)) {
       return res.status(400).json({ error: 'Invalid configuration' });
     }
 
@@ -47,9 +50,17 @@ router.put('/config', async (req, res) => {
       return res.status(400).json({ error: 'Volume must be between 0 and 100' });
     }
 
+    // Check if at least one day is selected when enabling alarm
+    const hasDay = monday || tuesday || wednesday || thursday || friday || saturday || sunday;
+    if (enabledValue === 1 && !hasDay) {
+      return res.status(400).json({
+        error: 'Please select at least one day of the week for the alarm'
+      });
+    }
+
     await updateAlarmConfig({
       time,
-      enabled,
+      enabled: enabledValue,
       monday: monday ? 1 : 0,
       tuesday: tuesday ? 1 : 0,
       wednesday: wednesday ? 1 : 0,

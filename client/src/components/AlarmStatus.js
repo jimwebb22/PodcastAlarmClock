@@ -5,6 +5,7 @@ function AlarmStatus() {
   const [config, setConfig] = useState(null);
   const [status, setStatus] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState('');
 
   useEffect(() => {
     loadData();
@@ -27,12 +28,18 @@ function AlarmStatus() {
   };
 
   const toggleEnabled = async () => {
+    setErrorMessage('');
     try {
       const newConfig = { ...config, enabled: !config.enabled };
       await alarm.updateConfig(newConfig);
       setConfig(newConfig);
     } catch (err) {
       console.error('Error toggling alarm:', err);
+      // Show user-friendly error message
+      const errorMsg = err.response?.data?.error || 'Failed to update alarm. Please ensure you have configured the schedule, speakers, and Spotify connection.';
+      setErrorMessage(errorMsg);
+      // Clear error after 5 seconds
+      setTimeout(() => setErrorMessage(''), 5000);
     }
   };
 
@@ -85,6 +92,12 @@ function AlarmStatus() {
       </div>
 
       <div className="space-y-4">
+        {errorMessage && (
+          <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+            <p className="text-sm text-red-600">{errorMessage}</p>
+          </div>
+        )}
+
         <div>
           <p className="text-sm text-gray-600">Status</p>
           <p className="text-xl font-semibold">{statusText}</p>

@@ -11,13 +11,30 @@ A local alarm clock system that plays Spotify podcasts and music through Sonos s
 
 ## Setup
 
+### Getting Spotify Credentials
+
+1. Go to [Spotify Developer Dashboard](https://developer.spotify.com/dashboard)
+2. Log in with your Spotify account (requires Spotify Premium)
+3. Click "Create app"
+4. Fill in:
+   - **App name**: "Sonos Alarm Clock" (or your preferred name)
+   - **App description**: "Personal alarm clock system"
+   - **Redirect URI**: `http://localhost:3001/api/auth/spotify/callback`
+   - **Which API/SDKs are you planning to use?**: Check "Web API"
+5. Accept terms and click "Save"
+6. Click "Settings" to view your credentials:
+   - Copy your **Client ID**
+   - Click "View client secret" and copy your **Client Secret**
+
+**Note**: If Spotify is temporarily not accepting new integrations, you'll need to wait until they reopen API registrations.
+
 ### Development
 
-1. Copy `.env.example` to `.env` and fill in Spotify credentials:
+1. Copy `.env.example` to `.env` and fill in your Spotify credentials:
    ```
-   SPOTIFY_CLIENT_ID=your_client_id
-   SPOTIFY_CLIENT_SECRET=your_client_secret
-   SPOTIFY_REDIRECT_URI=http://localhost:3001/api/auth/callback
+   SPOTIFY_CLIENT_ID=your_client_id_from_dashboard
+   SPOTIFY_CLIENT_SECRET=your_client_secret_from_dashboard
+   SPOTIFY_REDIRECT_URI=http://localhost:3001/api/auth/spotify/callback
    PORT=3001
    ```
 
