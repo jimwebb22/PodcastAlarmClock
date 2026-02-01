@@ -17,12 +17,16 @@ export const alarm = {
   updateConfig: (config) => api.put('/alarm/config', config),
   getStatus: () => api.get('/alarm/status'),
   test: () => api.post('/alarm/test'),
-  stop: () => api.post('/alarm/stop')
+  stop: () => api.post('/alarm/stop'),
+  getLogs: (limit = 10) => api.get('/alarm/logs', { params: { limit } })
 };
 
 // Speaker endpoints
-export const getSpeakers = () => api.get('/speakers/discover');
-export const getSpeakerInfo = () => api.get('/speakers/info');
+export const speakers = {
+  discover: () => api.get('/speakers/discover'),
+  getSelected: () => api.get('/speakers/selected'),
+  setSelected: (speakers) => api.post('/speakers/selected', { speakers })
+};
 
 // Playlist endpoints
 export const getPlaylists = () => api.get('/playlists');
@@ -31,15 +35,16 @@ export const updatePlaylist = (id, playlistData) => api.put(`/playlists/${id}`, 
 export const deletePlaylist = (id) => api.delete(`/playlists/${id}`);
 
 // Podcast endpoints
-export const getPodcasts = () => api.get('/podcasts');
-export const addPodcast = (podcastData) => api.post('/podcasts', podcastData);
-export const updatePodcast = (id, podcastData) => api.put(`/podcasts/${id}`, podcastData);
-export const deletePodcast = (id) => api.delete(`/podcasts/${id}`);
-export const getLatestEpisode = (id) => api.get(`/podcasts/${id}/latest`);
-export const searchPodcasts = (query) => api.get('/podcasts/search', { params: { q: query } });
+export const podcasts = {
+  getFollowed: () => api.get('/podcasts/followed'),
+  getSelected: () => api.get('/podcasts/selected'),
+  setSelected: (podcasts) => api.post('/podcasts/selected', { podcasts })
+};
 
 // Spotify endpoints
-export const getSpotifyAuthUrl = () => api.get('/spotify/auth-url');
-export const getSpotifyStatus = () => api.get('/spotify/status');
+export const spotify = {
+  getAuthUrl: () => api.get('/auth/spotify/login'),
+  getStatus: () => api.get('/auth/spotify/status')
+};
 
 export default api;

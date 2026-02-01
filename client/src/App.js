@@ -2,6 +2,10 @@ import React from 'react';
 import './index.css';
 import AlarmStatus from './components/AlarmStatus';
 import AlarmConfig from './components/AlarmConfig';
+import SpeakerSelection from './components/SpeakerSelection';
+import SpotifyAuth from './components/SpotifyAuth';
+import PodcastSelection from './components/PodcastSelection';
+import ControlPanel from './components/ControlPanel';
 
 function App() {
   return (
@@ -14,6 +18,10 @@ function App() {
         <div className="max-w-4xl mx-auto space-y-6">
           <AlarmStatus />
           <AlarmConfig />
+          <SpeakerSelection />
+          <SpotifyAuth />
+          <PodcastSelection />
+          <ControlPanel />
         </div>
       </div>
     </div>
