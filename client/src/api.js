@@ -11,6 +11,15 @@ export const updateAlarm = (id, alarmData) => api.put(`/alarms/${id}`, alarmData
 export const deleteAlarm = (id) => api.delete(`/alarms/${id}`);
 export const testAlarm = (id) => api.post(`/alarms/${id}/test`);
 
+// Alarm config and status
+export const alarm = {
+  getConfig: () => api.get('/alarm/config'),
+  updateConfig: (config) => api.put('/alarm/config', config),
+  getStatus: () => api.get('/alarm/status'),
+  test: () => api.post('/alarm/test'),
+  stop: () => api.post('/alarm/stop')
+};
+
 // Speaker endpoints
 export const getSpeakers = () => api.get('/speakers/discover');
 export const getSpeakerInfo = () => api.get('/speakers/info');
