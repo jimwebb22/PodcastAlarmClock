@@ -1,0 +1,28 @@
+# Worktrees
+.worktrees/
+
+# Dependencies
+node_modules/
+
+# Environment variables
+.env
+.env.local
+
+# SQLite database
+*.db
+*.sqlite
+*.sqlite3
+
+# Logs
+logs/
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
