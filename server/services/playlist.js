@@ -1,81 +1,40 @@
-const spotify = require('./spotify');
-const { getSelectedPodcasts, getAlarmConfig } = require('../db/models');
+const rss = require('./rss');
+const { getAlarmConfig } = require('../db/models');
 
-function shuffleArray(array) {
-  const shuffled = [...array];
-  for (let i = shuffled.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-  }
-  return shuffled;
-}
-
-async function getMusicTracks(musicSource) {
-  switch (musicSource) {
-    case 'daily_mix_1':
-      return await spotify.getDailyMixTracks(1);
-    case 'daily_mix_2':
-      return await spotify.getDailyMixTracks(2);
-    case 'daily_mix_3':
-      return await spotify.getDailyMixTracks(3);
-    case 'top_tracks':
-      return await spotify.getTopTracks();
-    default:
-      throw new Error(`Unknown music source: ${musicSource}`);
-  }
-}
-
+/**
+ * Build the alarm playlist queue from RSS podcast feeds
+ * Since we're not using music anymore, the queue is just podcast episodes
+ * @returns {Promise<Object>} Playlist info with queue and episode names
+ */
 async function buildPlaylistQueue() {
   try {
     const config = await getAlarmConfig();
-    const selectedPodcasts = await getSelectedPodcasts();
 
-    if (selectedPodcasts.length === 0) {
-      console.warn('No podcasts selected, will play music only');
+    // Fetch newest episode from each podcast feed
+    console.log('Fetching latest episodes from podcast feeds...');
+    const episodes = await rss.getLatestEpisodesFromAllFeeds();
+
+    if (episodes.length === 0) {
+      console.warn('No podcast episodes found from any feeds');
+      throw new Error('No podcast episodes available. Please add podcast feeds with available episodes.');
     }
 
-    // Fetch newest episode from each podcast
-    const episodePromises = selectedPodcasts.map(podcast =>
-      spotify.getShowEpisodes(podcast.show_id, 1)
-    );
-    const episodeArrays = await Promise.all(episodePromises);
-    const episodes = episodeArrays
-      .filter(arr => arr && arr.length > 0)
-      .map(arr => arr[0]);
+    console.log(`Found ${episodes.length} episodes from configured feeds`);
 
-    if (episodes.length === 0 && selectedPodcasts.length > 0) {
-      console.warn('No new episodes found, will play music only');
-    }
-
-    // Fetch music tracks
-    const musicTracks = await getMusicTracks(config.music_source);
-    const shuffledMusic = shuffleArray(musicTracks);
-
-    // Build queue: episode -> 3 songs -> episode -> 3 songs ...
+    // Build queue with MP3 URLs
     const queue = [];
     const episodeNames = [];
-    let musicIndex = 0;
 
-    if (episodes.length > 0) {
-      for (const episode of episodes) {
-        // Add episode
-        queue.push(episode.uri);
-        episodeNames.push(episode.name);
-
-        // Add 3 music tracks
-        for (let i = 0; i < 3; i++) {
-          if (musicIndex >= shuffledMusic.length) {
-            // Reshuffle if we run out
-            const newShuffled = shuffleArray(musicTracks);
-            shuffledMusic.push(...newShuffled);
-          }
-          queue.push(shuffledMusic[musicIndex].uri);
-          musicIndex++;
-        }
+    for (const episode of episodes) {
+      if (episode.audioUrl) {
+        queue.push(episode.audioUrl);
+        episodeNames.push(`${episode.feedName}: ${episode.title}`);
+        console.log(`Added: ${episode.feedName} - ${episode.title}`);
       }
-    } else {
-      // No episodes, just play music
-      queue.push(...shuffledMusic.map(track => track.uri));
+    }
+
+    if (queue.length === 0) {
+      throw new Error('No playable episodes found in feeds');
     }
 
     return {
@@ -90,6 +49,11 @@ async function buildPlaylistQueue() {
   }
 }
 
+/**
+ * Build playlist with retry logic and exponential backoff
+ * @param {number} maxRetries - Maximum number of retry attempts
+ * @returns {Promise<Object>} Playlist info
+ */
 async function buildPlaylistWithRetry(maxRetries = 3) {
   let lastError;
 
@@ -98,10 +62,11 @@ async function buildPlaylistWithRetry(maxRetries = 3) {
       return await buildPlaylistQueue();
     } catch (err) {
       lastError = err;
-      console.error(`Playlist build attempt ${attempt} failed:`, err);
+      console.error(`Playlist build attempt ${attempt} failed:`, err.message);
 
       if (attempt < maxRetries) {
         const delay = Math.pow(2, attempt) * 1000; // Exponential backoff
+        console.log(`Retrying in ${delay / 1000} seconds...`);
         await new Promise(resolve => setTimeout(resolve, delay));
       }
     }

@@ -1,90 +1,63 @@
 # Podcast Alarm Clock
 
-A local alarm clock system that plays Spotify podcasts and music through Sonos speakers.
+A local alarm clock system that plays podcasts from RSS feeds through Sonos speakers.
+
+## Features
+
+- Wake up to the newest episodes from your favorite podcasts
+- Works with any podcast that has a public RSS feed
+- No external service accounts or API keys required
+- Configure alarm time, weekdays, and volume
+- Support for multiple Sonos speakers with grouping
+- Mobile-responsive web interface
 
 ## Prerequisites
 
 - Node.js 16+
-- Spotify Premium account
 - Sonos speakers on local network
 - PM2 (for production deployment): `npm install -g pm2`
 
-## Setup
+## Quick Start
 
-### Getting Spotify Credentials
-
-1. Go to [Spotify Developer Dashboard](https://developer.spotify.com/dashboard)
-2. Log in with your Spotify account (requires Spotify Premium)
-3. Click "Create app"
-4. Fill in:
-   - **App name**: "Podcast Alarm Clock" (or your preferred name)
-   - **App description**: "Personal alarm clock system"
-   - **Redirect URI**: `http://localhost:3001/api/auth/spotify/callback`
-   - **Which API/SDKs are you planning to use?**: Check "Web API"
-5. Accept terms and click "Save"
-6. Click "Settings" to view your credentials:
-   - Copy your **Client ID**
-   - Click "View client secret" and copy your **Client Secret**
-
-**Note**: If Spotify is temporarily not accepting new integrations, you'll need to wait until they reopen API registrations.
-
-### Development
-
-1. Copy `.env.example` to `.env` and fill in your Spotify credentials:
-   ```
-   SPOTIFY_CLIENT_ID=your_client_id_from_dashboard
-   SPOTIFY_CLIENT_SECRET=your_client_secret_from_dashboard
-   SPOTIFY_REDIRECT_URI=http://localhost:3001/api/auth/spotify/callback
-   PORT=3001
-   ```
-
-2. Install dependencies:
+1. Install dependencies:
    ```bash
    npm install
    ```
 
-3. Start development server:
+2. Copy environment template:
    ```bash
-   npm run dev
+   cp .env.example .env
    ```
 
-4. In a separate terminal, start React development server:
+3. Start the server:
    ```bash
-   cd client
    npm start
    ```
 
-5. Access UI: http://localhost:3000
-
-### Production
-
-1. Ensure `.env` file is configured
-
-2. Run deployment script:
-   ```bash
-   ./deploy.sh
-   ```
-
-   This will:
-   - Install all dependencies
-   - Build the React production bundle
-   - Start/restart the PM2 service
-   - Configure auto-restart on crashes
-
-3. Access UI: http://localhost:3001
+4. Open http://localhost:3001 in your browser
 
 ## Usage
 
 ### Initial Configuration
 
-1. Open the web UI (http://localhost:3001 in production)
-2. Click "Connect Spotify" to authorize the app
-3. Discover and select your Sonos speakers
-4. Configure alarm time and select weekdays
-5. Choose eligible podcasts from your followed shows
-6. Select music source (Daily Mix or Top Tracks)
-7. Set desired volume level
-8. Toggle alarm ON
+1. Open the web UI (http://localhost:3001)
+2. Click "Discover Speakers" to find your Sonos speakers
+3. Select which speakers to use for the alarm
+4. Add podcast RSS feeds (paste the feed URL)
+5. Configure alarm time and select weekdays
+6. Set desired volume level
+7. Toggle alarm ON
+
+### Adding Podcasts
+
+1. Find the podcast's RSS feed URL:
+   - Check the podcast's website
+   - Search "[podcast name] RSS feed"
+   - Use a podcast directory like Listen Notes
+
+2. Paste the RSS feed URL into the "Add Podcast RSS Feed" field
+3. Click "Add" - the system validates the feed and extracts the title
+4. The podcast appears in your saved list
 
 ### Daily Operation
 
@@ -93,38 +66,52 @@ A local alarm clock system that plays Spotify podcasts and music through Sonos s
 - **Stop**: Use "Stop Playback" button to end alarm playback
 - **Monitor**: View alarm status and next scheduled time on dashboard
 
-## PM2 Commands
+## Development
+
+Start backend and frontend separately for development:
 
 ```bash
-# View status
-pm2 status
+# Terminal 1: Backend server (port 3001)
+npm run dev
 
-# View logs
-pm2 logs podcast-alarm-clock
-
-# Restart service
-pm2 restart podcast-alarm-clock
-
-# Stop service
-pm2 stop podcast-alarm-clock
-
-# Start on system boot
-pm2 startup
-pm2 save
+# Terminal 2: React dev server (port 3000)
+cd client
+npm start
 ```
+
+Access the development UI at http://localhost:3000
+
+## Production Deployment
+
+1. Build and deploy with PM2:
+   ```bash
+   npm run deploy
+   ```
+
+2. Manage with PM2:
+   ```bash
+   pm2 status                    # View status
+   pm2 logs podcast-alarm        # View logs
+   pm2 restart podcast-alarm     # Restart service
+   pm2 stop podcast-alarm        # Stop service
+   ```
+
+3. Enable auto-start on boot:
+   ```bash
+   pm2 startup
+   pm2 save
+   ```
 
 ## Project Structure
 
 ```
-podcast-alarm-clock/
+PodcastAlarmClock/
 ├── server/
 │   ├── api/              # Express API routes
-│   ├── services/         # Spotify, Sonos, scheduler, playlist
+│   ├── services/         # RSS parsing, Sonos, scheduler
 │   └── db/               # SQLite database
 ├── client/               # React web app
-├── logs/                 # Application logs (created by PM2)
-├── ecosystem.config.js   # PM2 configuration
-├── deploy.sh             # Deployment script
+├── .env.example          # Environment template
 └── package.json
 ```
 
@@ -133,24 +120,35 @@ podcast-alarm-clock/
 ### Alarm Not Triggering
 
 - Check PM2 status: `pm2 status`
-- View logs: `pm2 logs podcast-alarm-clock`
+- View logs: `pm2 logs podcast-alarm`
 - Verify alarm is enabled in UI
 - Check that current day is selected
-- Ensure Spotify tokens haven't expired (reconnect if needed)
+- Verify at least one podcast feed is added
 
 ### Sonos Speakers Not Found
 
-- Verify speakers are on same network as Mac mini
+- Verify speakers are on same network as server
 - Check speaker power and network connectivity
 - Click "Discover Speakers" again in UI
-- Restart Sonos speakers if needed
+- Check firewall isn't blocking SSDP discovery
 
-### Spotify Connection Issues
+### Podcast Feed Errors
 
-- Click "Connect Spotify" to re-authorize
-- Verify `.env` credentials are correct
-- Check Spotify API status
-- View logs for specific error messages
+- Verify the URL is a valid RSS feed (not a webpage)
+- Try opening the feed URL directly in a browser
+- Some feeds may be geo-restricted
+- Check logs for specific error messages
+
+## API Endpoints
+
+- `GET /api/podcasts/feeds` - List saved podcast feeds
+- `POST /api/podcasts/feeds` - Add new feed
+- `DELETE /api/podcasts/feeds/:id` - Remove feed
+- `GET /api/alarm/config` - Get alarm configuration
+- `PUT /api/alarm/config` - Update alarm configuration
+- `POST /api/alarm/test` - Trigger test alarm
+- `POST /api/alarm/stop` - Stop playback
+- `GET /api/speakers/discover` - Discover Sonos speakers
 
 ## License
 

@@ -92,7 +92,13 @@ async function setVolume(speakerUuid, volume) {
   await speaker.deviceObject.setVolume(volume);
 }
 
-async function playQueue(coordinatorUuid, spotifyUris) {
+/**
+ * Play a queue of audio URLs on the Sonos speaker
+ * Supports direct MP3 URLs from podcast RSS feeds
+ * @param {string} coordinatorUuid - UUID of the coordinator speaker
+ * @param {string[]} audioUrls - Array of audio URLs (MP3, etc.)
+ */
+async function playQueue(coordinatorUuid, audioUrls) {
   const coordinator = getSpeakerByUuid(coordinatorUuid);
   if (!coordinator) {
     throw new Error(`Coordinator ${coordinatorUuid} not found`);
@@ -102,15 +108,38 @@ async function playQueue(coordinatorUuid, spotifyUris) {
     // Clear current queue
     await coordinator.deviceObject.flush();
 
-    // Add URIs to queue
-    for (const uri of spotifyUris) {
-      await coordinator.deviceObject.queue(uri);
+    // Add audio URLs to queue
+    // node-sonos supports direct HTTP URLs for audio files
+    for (const url of audioUrls) {
+      console.log(`Queueing: ${url.substring(0, 80)}...`);
+      await coordinator.deviceObject.queue(url);
     }
 
     // Start playback
     await coordinator.deviceObject.play();
+    console.log(`Started playback of ${audioUrls.length} items`);
   } catch (err) {
     console.error('Error playing queue:', err);
+    throw err;
+  }
+}
+
+/**
+ * Play a single audio URL immediately (for testing)
+ * @param {string} speakerUuid - UUID of the speaker
+ * @param {string} audioUrl - Direct URL to audio file
+ */
+async function playUrl(speakerUuid, audioUrl) {
+  const speaker = getSpeakerByUuid(speakerUuid);
+  if (!speaker) {
+    throw new Error(`Speaker ${speakerUuid} not found`);
+  }
+
+  try {
+    await speaker.deviceObject.play(audioUrl);
+    console.log(`Playing URL: ${audioUrl.substring(0, 80)}...`);
+  } catch (err) {
+    console.error('Error playing URL:', err);
     throw err;
   }
 }
@@ -124,6 +153,27 @@ async function stopPlayback(speakerUuid) {
   await speaker.deviceObject.pause();
 }
 
+/**
+ * Get current playback state
+ * @param {string} speakerUuid - UUID of the speaker
+ * @returns {Promise<Object>} Current playback state
+ */
+async function getPlaybackState(speakerUuid) {
+  const speaker = getSpeakerByUuid(speakerUuid);
+  if (!speaker) {
+    throw new Error(`Speaker ${speakerUuid} not found`);
+  }
+
+  try {
+    const state = await speaker.deviceObject.getCurrentState();
+    const track = await speaker.deviceObject.currentTrack();
+    return { state, track };
+  } catch (err) {
+    console.error('Error getting playback state:', err);
+    throw err;
+  }
+}
+
 module.exports = {
   discoverSpeakers,
   getSpeakerByUuid,
@@ -131,5 +181,7 @@ module.exports = {
   ungroupSpeakers,
   setVolume,
   playQueue,
-  stopPlayback
+  playUrl,
+  stopPlayback,
+  getPlaybackState
 };

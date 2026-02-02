@@ -15,11 +15,12 @@ function AlarmConfig() {
   const loadConfig = async () => {
     try {
       const res = await alarm.getConfig();
-      setConfig(res.data.config);
-      setLocalConfig(res.data.config);
+      setConfig(res.data);
+      setLocalConfig(res.data);
       setLoading(false);
     } catch (err) {
       console.error('Error loading config:', err);
+      setLoading(false);
     }
   };
 
@@ -35,10 +36,6 @@ function AlarmConfig() {
     setLocalConfig({ ...localConfig, volume: parseInt(e.target.value) });
   };
 
-  const handleMusicSourceChange = (e) => {
-    setLocalConfig({ ...localConfig, music_source: e.target.value });
-  };
-
   const handleSave = async () => {
     setSaving(true);
     setSaveMessage('');
@@ -50,7 +47,7 @@ function AlarmConfig() {
       setTimeout(() => setSaveMessage(''), 3000);
     } catch (err) {
       console.error('Error saving config:', err);
-      setSaveMessage('Error saving configuration');
+      setSaveMessage(err.response?.data?.error || 'Error saving configuration');
     } finally {
       setSaving(false);
     }
@@ -77,13 +74,6 @@ function AlarmConfig() {
     { key: 'friday', label: 'Fri' },
     { key: 'saturday', label: 'Sat' },
     { key: 'sunday', label: 'Sun' }
-  ];
-
-  const musicSources = [
-    { value: 'daily_mix_1', label: 'Daily Mix 1' },
-    { value: 'daily_mix_2', label: 'Daily Mix 2' },
-    { value: 'daily_mix_3', label: 'Daily Mix 3' },
-    { value: 'top_tracks', label: 'Top Tracks' }
   ];
 
   return (
@@ -144,24 +134,6 @@ function AlarmConfig() {
             <span>50%</span>
             <span>100%</span>
           </div>
-        </div>
-
-        {/* Music Source Dropdown */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Music Source
-          </label>
-          <select
-            value={localConfig?.music_source || 'daily_mix_1'}
-            onChange={handleMusicSourceChange}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-lg"
-          >
-            {musicSources.map(({ value, label }) => (
-              <option key={value} value={value}>
-                {label}
-              </option>
-            ))}
-          </select>
         </div>
 
         {/* Save Button */}

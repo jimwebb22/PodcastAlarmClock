@@ -4,13 +4,6 @@ const api = axios.create({
   baseURL: '/api',
 });
 
-// Alarm endpoints
-export const getAlarms = () => api.get('/alarms');
-export const createAlarm = (alarmData) => api.post('/alarms', alarmData);
-export const updateAlarm = (id, alarmData) => api.put(`/alarms/${id}`, alarmData);
-export const deleteAlarm = (id) => api.delete(`/alarms/${id}`);
-export const testAlarm = (id) => api.post(`/alarms/${id}/test`);
-
 // Alarm config and status
 export const alarm = {
   getConfig: () => api.get('/alarm/config'),
@@ -28,23 +21,13 @@ export const speakers = {
   setSelected: (speakers) => api.post('/speakers/selected', { speakers })
 };
 
-// Playlist endpoints
-export const getPlaylists = () => api.get('/playlists');
-export const createPlaylist = (playlistData) => api.post('/playlists', playlistData);
-export const updatePlaylist = (id, playlistData) => api.put(`/playlists/${id}`, playlistData);
-export const deletePlaylist = (id) => api.delete(`/playlists/${id}`);
-
-// Podcast endpoints
+// Podcast feed endpoints (RSS-based)
 export const podcasts = {
-  getFollowed: () => api.get('/podcasts/followed'),
-  getSelected: () => api.get('/podcasts/selected'),
-  setSelected: (podcasts) => api.post('/podcasts/selected', { podcasts })
-};
-
-// Spotify endpoints
-export const spotify = {
-  getAuthUrl: () => api.get('/auth/spotify/login'),
-  getStatus: () => api.get('/auth/spotify/status')
+  getFeeds: () => api.get('/podcasts/feeds'),
+  addFeed: (feedUrl) => api.post('/podcasts/feeds', { feedUrl }),
+  removeFeed: (feedId) => api.delete(`/podcasts/feeds/${feedId}`),
+  previewFeed: (feedUrl) => api.post('/podcasts/feeds/preview', { feedUrl }),
+  getEpisodes: () => api.get('/podcasts/episodes')
 };
 
 export default api;

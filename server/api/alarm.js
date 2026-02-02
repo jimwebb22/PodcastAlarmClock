@@ -27,8 +27,7 @@ router.put('/config', async (req, res) => {
       friday,
       saturday,
       sunday,
-      volume,
-      music_source
+      volume
     } = req.body;
 
     // Convert enabled to number if boolean
@@ -68,8 +67,7 @@ router.put('/config', async (req, res) => {
       friday: friday ? 1 : 0,
       saturday: saturday ? 1 : 0,
       sunday: sunday ? 1 : 0,
-      volume,
-      music_source
+      volume
     });
 
     // Reschedule alarm with new configuration

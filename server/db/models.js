@@ -28,8 +28,7 @@ function updateAlarmConfig(config) {
       friday,
       saturday,
       sunday,
-      volume,
-      music_source
+      volume
     } = config;
 
     const sql = `
@@ -43,14 +42,13 @@ function updateAlarmConfig(config) {
           friday = ?,
           saturday = ?,
           sunday = ?,
-          volume = ?,
-          music_source = ?
+          volume = ?
       WHERE id = 1
     `;
 
     db.run(
       sql,
-      [time, enabled, monday, tuesday, wednesday, thursday, friday, saturday, sunday, volume, music_source],
+      [time, enabled, monday, tuesday, wednesday, thursday, friday, saturday, sunday, volume],
       function(err) {
         db.close();
         if (err) {
@@ -125,11 +123,11 @@ function setSelectedSpeakers(speakers) {
   });
 }
 
-// Selected Podcasts Functions
-function getSelectedPodcasts() {
+// Podcast Feeds Functions
+function getPodcastFeeds() {
   return new Promise((resolve, reject) => {
     const db = getDatabase();
-    db.all('SELECT * FROM selected_podcasts', (err, rows) => {
+    db.all('SELECT * FROM podcast_feeds ORDER BY created_at DESC', (err, rows) => {
       db.close();
       if (err) {
         reject(err);
@@ -140,89 +138,56 @@ function getSelectedPodcasts() {
   });
 }
 
-function setSelectedPodcasts(podcasts) {
+function addPodcastFeed(feedUrl, feedName) {
   return new Promise((resolve, reject) => {
     const db = getDatabase();
+    const sql = 'INSERT INTO podcast_feeds (feed_url, feed_name) VALUES (?, ?)';
 
-    // Delete all existing podcasts and insert new ones
-    db.serialize(() => {
-      db.run('DELETE FROM selected_podcasts', (err) => {
+    db.run(sql, [feedUrl, feedName], function(err) {
+      db.close();
+      if (err) {
+        // Check for unique constraint violation
+        if (err.message.includes('UNIQUE constraint failed')) {
+          reject(new Error('This podcast feed has already been added'));
+        } else {
+          reject(err);
+        }
+        return;
+      }
+      resolve({ id: this.lastID, feed_url: feedUrl, feed_name: feedName });
+    });
+  });
+}
+
+function removePodcastFeed(feedId) {
+  return new Promise((resolve, reject) => {
+    const db = getDatabase();
+    db.run('DELETE FROM podcast_feeds WHERE id = ?', [feedId], function(err) {
+      db.close();
+      if (err) {
+        reject(err);
+        return;
+      }
+      resolve({ deleted: this.changes });
+    });
+  });
+}
+
+function updatePodcastFeed(feedId, feedName) {
+  return new Promise((resolve, reject) => {
+    const db = getDatabase();
+    db.run(
+      'UPDATE podcast_feeds SET feed_name = ? WHERE id = ?',
+      [feedName, feedId],
+      function(err) {
+        db.close();
         if (err) {
-          db.close();
           reject(err);
           return;
         }
-
-        if (podcasts.length === 0) {
-          db.close();
-          resolve({ inserted: 0 });
-          return;
-        }
-
-        const stmt = db.prepare('INSERT INTO selected_podcasts (show_id, show_name) VALUES (?, ?)');
-
-        let completed = 0;
-        let hasError = false;
-
-        podcasts.forEach((podcast) => {
-          stmt.run([podcast.show_id, podcast.show_name], (err) => {
-            if (err && !hasError) {
-              hasError = true;
-              stmt.finalize();
-              db.close();
-              reject(err);
-              return;
-            }
-
-            completed++;
-            if (completed === podcasts.length && !hasError) {
-              stmt.finalize();
-              db.close();
-              resolve({ inserted: completed });
-            }
-          });
-        });
-      });
-    });
-  });
-}
-
-// Spotify Auth Functions
-function getSpotifyAuth() {
-  return new Promise((resolve, reject) => {
-    const db = getDatabase();
-    db.get('SELECT * FROM spotify_auth WHERE id = 1', (err, row) => {
-      db.close();
-      if (err) {
-        reject(err);
-        return;
+        resolve({ changes: this.changes });
       }
-      resolve(row);
-    });
-  });
-}
-
-function updateSpotifyAuth(auth) {
-  return new Promise((resolve, reject) => {
-    const db = getDatabase();
-    const { access_token, refresh_token, expires_at } = auth;
-
-    const sql = `
-      UPDATE spotify_auth
-      SET access_token = ?,
-          refresh_token = ?,
-          expires_at = ?
-      WHERE id = 1
-    `;
-
-    db.run(sql, [access_token, refresh_token, expires_at], function(err) {
-      db.close();
-      if (err) {
-        reject(err);
-        return;
-      }
-      resolve({ changes: this.changes });
-    });
+    );
   });
 }
 
@@ -279,10 +244,10 @@ module.exports = {
   updateAlarmConfig,
   getSelectedSpeakers,
   setSelectedSpeakers,
-  getSelectedPodcasts,
-  setSelectedPodcasts,
-  getSpotifyAuth,
-  updateSpotifyAuth,
+  getPodcastFeeds,
+  addPodcastFeed,
+  removePodcastFeed,
+  updatePodcastFeed,
   addAlarmLog,
   getRecentLogs
 };

@@ -9,8 +9,7 @@ CREATE TABLE IF NOT EXISTS alarm_config (
   friday INTEGER NOT NULL DEFAULT 1,
   saturday INTEGER NOT NULL DEFAULT 0,
   sunday INTEGER NOT NULL DEFAULT 0,
-  volume INTEGER NOT NULL DEFAULT 30 CHECK (volume >= 0 AND volume <= 100),
-  music_source TEXT NOT NULL DEFAULT 'daily_mix_1'
+  volume INTEGER NOT NULL DEFAULT 30 CHECK (volume >= 0 AND volume <= 100)
 );
 
 CREATE TABLE IF NOT EXISTS selected_speakers (
@@ -19,17 +18,11 @@ CREATE TABLE IF NOT EXISTS selected_speakers (
   speaker_uuid TEXT NOT NULL UNIQUE
 );
 
-CREATE TABLE IF NOT EXISTS selected_podcasts (
+CREATE TABLE IF NOT EXISTS podcast_feeds (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
-  show_id TEXT NOT NULL UNIQUE,
-  show_name TEXT NOT NULL
-);
-
-CREATE TABLE IF NOT EXISTS spotify_auth (
-  id INTEGER PRIMARY KEY CHECK (id = 1),
-  access_token TEXT,
-  refresh_token TEXT,
-  expires_at INTEGER
+  feed_url TEXT NOT NULL UNIQUE,
+  feed_name TEXT NOT NULL,
+  created_at TEXT DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE IF NOT EXISTS alarm_logs (
@@ -42,4 +35,3 @@ CREATE TABLE IF NOT EXISTS alarm_logs (
 
 -- Insert default alarm config if not exists
 INSERT OR IGNORE INTO alarm_config (id, time, enabled) VALUES (1, '07:00', 0);
-INSERT OR IGNORE INTO spotify_auth (id) VALUES (1);

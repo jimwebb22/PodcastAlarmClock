@@ -3,7 +3,6 @@ const cors = require('cors');
 const path = require('path');
 require('dotenv').config();
 const { initDatabase } = require('./db/database');
-const authRoutes = require('./api/auth');
 const speakersRoutes = require('./api/speakers');
 const alarmRoutes = require('./api/alarm');
 const podcastsRoutes = require('./api/podcasts');
@@ -19,7 +18,6 @@ app.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
-app.use('/api/auth', authRoutes);
 app.use('/api/speakers', speakersRoutes);
 app.use('/api/alarm', alarmRoutes);
 app.use('/api/podcasts', podcastsRoutes);

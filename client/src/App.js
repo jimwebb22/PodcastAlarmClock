@@ -3,7 +3,6 @@ import './index.css';
 import AlarmStatus from './components/AlarmStatus';
 import AlarmConfig from './components/AlarmConfig';
 import SpeakerSelection from './components/SpeakerSelection';
-import SpotifyAuth from './components/SpotifyAuth';
 import PodcastSelection from './components/PodcastSelection';
 import ControlPanel from './components/ControlPanel';
 
@@ -19,7 +18,6 @@ function App() {
           <AlarmStatus />
           <AlarmConfig />
           <SpeakerSelection />
-          <SpotifyAuth />
           <PodcastSelection />
           <ControlPanel />
         </div>
