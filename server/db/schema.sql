@@ -33,5 +33,16 @@ CREATE TABLE IF NOT EXISTS alarm_logs (
   episodes_played TEXT
 );
 
+CREATE TABLE IF NOT EXISTS played_episodes (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  feed_id INTEGER NOT NULL,
+  episode_guid TEXT NOT NULL,
+  episode_title TEXT,
+  audio_url TEXT,
+  played_at TEXT DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (feed_id) REFERENCES podcast_feeds(id) ON DELETE CASCADE,
+  UNIQUE(feed_id, episode_guid)
+);
+
 -- Insert default alarm config if not exists
 INSERT OR IGNORE INTO alarm_config (id, time, enabled) VALUES (1, '07:00', 0);

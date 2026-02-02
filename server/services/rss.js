@@ -1,5 +1,5 @@
 const Parser = require('rss-parser');
-const { getPodcastFeeds } = require('../db/models');
+const { getPodcastFeeds, isEpisodePlayed } = require('../db/models');
 
 const parser = new Parser({
   timeout: 30000, // 30 second timeout
@@ -117,10 +117,12 @@ async function getLatestEpisodes(feedUrl, limit = 1) {
 }
 
 /**
- * Get the latest episode from each configured podcast feed
+ * Get the latest unplayed episode from each configured podcast feed
+ * @param {boolean} skipPlayed - Whether to skip already played episodes
+ * @param {number} episodesToCheck - How many recent episodes to check per feed
  * @returns {Promise<Array>} Array of episode objects with audio URLs
  */
-async function getLatestEpisodesFromAllFeeds() {
+async function getLatestEpisodesFromAllFeeds(skipPlayed = true, episodesToCheck = 10) {
   const feeds = await getPodcastFeeds();
 
   if (feeds.length === 0) {
@@ -130,14 +132,35 @@ async function getLatestEpisodesFromAllFeeds() {
 
   const episodePromises = feeds.map(async (feed) => {
     try {
-      const episodes = await getLatestEpisodes(feed.feed_url, 1);
-      if (episodes.length > 0) {
-        return {
-          ...episodes[0],
+      // Fetch multiple episodes so we can find unplayed ones
+      const episodes = await getLatestEpisodes(feed.feed_url, episodesToCheck);
+
+      if (episodes.length === 0) {
+        return null;
+      }
+
+      // Find the first unplayed episode
+      for (const episode of episodes) {
+        const episodeWithFeed = {
+          ...episode,
           feedId: feed.id,
           feedName: feed.feed_name
         };
+
+        if (!skipPlayed) {
+          return episodeWithFeed;
+        }
+
+        // Check if this episode has been played
+        const played = await isEpisodePlayed(feed.id, episode.guid);
+        if (!played) {
+          return episodeWithFeed;
+        }
+        console.log(`Skipping already played: ${feed.feed_name} - ${episode.title}`);
       }
+
+      // All recent episodes have been played
+      console.log(`All recent episodes from ${feed.feed_name} have been played`);
       return null;
     } catch (error) {
       console.error(`Error fetching episodes from ${feed.feed_name}:`, error.message);
@@ -147,7 +170,7 @@ async function getLatestEpisodesFromAllFeeds() {
 
   const results = await Promise.all(episodePromises);
 
-  // Filter out failed fetches and sort by date (newest first)
+  // Filter out failed/empty fetches and sort by date (newest first)
   return results
     .filter(ep => ep !== null)
     .sort((a, b) => {

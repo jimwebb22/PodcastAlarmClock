@@ -239,6 +239,126 @@ function getRecentLogs(limit = 10) {
   });
 }
 
+// Played Episodes Functions
+function markEpisodePlayed(feedId, episodeGuid, episodeTitle, audioUrl) {
+  return new Promise((resolve, reject) => {
+    const db = getDatabase();
+    const sql = `
+      INSERT OR REPLACE INTO played_episodes (feed_id, episode_guid, episode_title, audio_url, played_at)
+      VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)
+    `;
+
+    db.run(sql, [feedId, episodeGuid, episodeTitle, audioUrl], function(err) {
+      db.close();
+      if (err) {
+        reject(err);
+        return;
+      }
+      resolve({ id: this.lastID });
+    });
+  });
+}
+
+function isEpisodePlayed(feedId, episodeGuid) {
+  return new Promise((resolve, reject) => {
+    const db = getDatabase();
+    const sql = 'SELECT id FROM played_episodes WHERE feed_id = ? AND episode_guid = ?';
+
+    db.get(sql, [feedId, episodeGuid], (err, row) => {
+      db.close();
+      if (err) {
+        reject(err);
+        return;
+      }
+      resolve(!!row);
+    });
+  });
+}
+
+function getPlayedEpisodesForFeed(feedId) {
+  return new Promise((resolve, reject) => {
+    const db = getDatabase();
+    const sql = `
+      SELECT episode_guid, episode_title, audio_url, played_at
+      FROM played_episodes
+      WHERE feed_id = ?
+      ORDER BY played_at DESC
+    `;
+
+    db.all(sql, [feedId], (err, rows) => {
+      db.close();
+      if (err) {
+        reject(err);
+        return;
+      }
+      resolve(rows);
+    });
+  });
+}
+
+function getAllPlayedEpisodes(limit = 50) {
+  return new Promise((resolve, reject) => {
+    const db = getDatabase();
+    const sql = `
+      SELECT pe.*, pf.feed_name
+      FROM played_episodes pe
+      JOIN podcast_feeds pf ON pe.feed_id = pf.id
+      ORDER BY pe.played_at DESC
+      LIMIT ?
+    `;
+
+    db.all(sql, [limit], (err, rows) => {
+      db.close();
+      if (err) {
+        reject(err);
+        return;
+      }
+      resolve(rows);
+    });
+  });
+}
+
+function clearPlayedEpisodes(feedId = null) {
+  return new Promise((resolve, reject) => {
+    const db = getDatabase();
+    let sql = 'DELETE FROM played_episodes';
+    const params = [];
+
+    if (feedId) {
+      sql += ' WHERE feed_id = ?';
+      params.push(feedId);
+    }
+
+    db.run(sql, params, function(err) {
+      db.close();
+      if (err) {
+        reject(err);
+        return;
+      }
+      resolve({ deleted: this.changes });
+    });
+  });
+}
+
+function clearOldPlayedEpisodes(daysToKeep = 30) {
+  return new Promise((resolve, reject) => {
+    const db = getDatabase();
+    const sql = `
+      DELETE FROM played_episodes
+      WHERE played_at < datetime('now', '-' || ? || ' days')
+    `;
+
+    db.run(sql, [daysToKeep], function(err) {
+      db.close();
+      if (err) {
+        reject(err);
+        return;
+      }
+      resolve({ deleted: this.changes });
+    });
+  });
+}
+
 module.exports = {
   getAlarmConfig,
   updateAlarmConfig,
@@ -249,5 +369,11 @@ module.exports = {
   removePodcastFeed,
   updatePodcastFeed,
   addAlarmLog,
-  getRecentLogs
+  getRecentLogs,
+  markEpisodePlayed,
+  isEpisodePlayed,
+  getPlayedEpisodesForFeed,
+  getAllPlayedEpisodes,
+  clearPlayedEpisodes,
+  clearOldPlayedEpisodes
 };

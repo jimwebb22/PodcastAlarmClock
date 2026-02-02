@@ -1,7 +1,14 @@
 const express = require('express');
 const router = express.Router();
 const rss = require('../services/rss');
-const { getPodcastFeeds, addPodcastFeed, removePodcastFeed } = require('../db/models');
+const {
+  getPodcastFeeds,
+  addPodcastFeed,
+  removePodcastFeed,
+  getAllPlayedEpisodes,
+  getPlayedEpisodesForFeed,
+  clearPlayedEpisodes
+} = require('../db/models');
 
 // Get all saved podcast feeds
 router.get('/feeds', async (req, res) => {
@@ -96,10 +103,49 @@ router.post('/feeds/preview', async (req, res) => {
 // Get latest episodes from all feeds (for display/testing)
 router.get('/episodes', async (req, res) => {
   try {
-    const episodes = await rss.getLatestEpisodesFromAllFeeds();
+    const skipPlayed = req.query.skipPlayed !== 'false';
+    const episodes = await rss.getLatestEpisodesFromAllFeeds(skipPlayed);
     res.json({ episodes });
   } catch (err) {
     console.error('Error getting episodes:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Get played episodes history
+router.get('/played', async (req, res) => {
+  try {
+    const limit = parseInt(req.query.limit) || 50;
+    const feedId = req.query.feedId ? parseInt(req.query.feedId) : null;
+
+    let playedEpisodes;
+    if (feedId) {
+      playedEpisodes = await getPlayedEpisodesForFeed(feedId);
+    } else {
+      playedEpisodes = await getAllPlayedEpisodes(limit);
+    }
+
+    res.json({ playedEpisodes });
+  } catch (err) {
+    console.error('Error getting played episodes:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Clear played episodes history
+router.delete('/played', async (req, res) => {
+  try {
+    const feedId = req.query.feedId ? parseInt(req.query.feedId) : null;
+
+    const result = await clearPlayedEpisodes(feedId);
+    res.json({
+      success: true,
+      message: feedId
+        ? `Cleared ${result.deleted} played episodes for feed ${feedId}`
+        : `Cleared ${result.deleted} played episodes from all feeds`
+    });
+  } catch (err) {
+    console.error('Error clearing played episodes:', err);
     res.status(500).json({ error: err.message });
   }
 });
