@@ -21,6 +21,30 @@ This document provides context and guidance for Claude (or future developers) wo
 - Scheduling: node-cron
 - Deployment: PM2
 
+## Recent Updates (February 2026)
+
+**Metadata Support Added:**
+- Full DIDL-Lite XML metadata for Sonos "Now Playing" display
+- Episode titles, podcast names, and artwork appear in Sonos apps
+- Support for both desktop and mobile Sonos applications
+- Episode artwork extracted from RSS feeds (per-episode or feed-level fallback)
+
+**Sonos Playback Improvements:**
+- Fixed UPnP error 701 by using correct setAVTransportURI format
+- Enhanced reliability with proper stop/flush/queue sequence
+- Metadata passed as options object to ensure proper display
+- Added Rincon-specific tags (r:streamContent, r:radioShowMd) for mobile apps
+
+**Frontend Fixes:**
+- AlarmStatus component reads config from correct API path
+- AlarmConfig weekday toggles use 1/0 values instead of booleans
+- Error messages reference podcast feeds instead of Spotify
+
+**Developer Experience:**
+- Human-readable episode names in server logs instead of URLs
+- Comprehensive debugging output for metadata pipeline
+- Clear separation of concerns: RSS → Playlist → Scheduler → Sonos
+
 ## Project Structure
 
 ```
@@ -84,9 +108,29 @@ PodcastAlarmClock/
 **`server/services/sonos.js`**
 - Discovers speakers via SSDP on local network
 - Groups speakers dynamically at alarm time
-- Queues and plays MP3 URLs directly on Sonos
+- Queues and plays MP3 URLs directly on Sonos with rich metadata
+- Creates DIDL-Lite XML for episode titles, artwork, and artist info
 - Stops playback and ungroups speakers
 - **Safety:** Only plays on configured speakers, never falls back to others
+- **Metadata:** Formats episode info for Sonos "Now Playing" display
+
+**DIDL-Lite Metadata Format:**
+The system creates XML metadata for each episode with:
+- `dc:title` - Episode title
+- `dc:creator` - Podcast name
+- `upnp:artist` - Podcast name (for UPnP compatibility)
+- `upnp:album` - Podcast name (appears as album)
+- `upnp:albumArtURI` - Episode or feed artwork URL
+- `r:streamContent` - Sonos-specific title for mobile apps
+- `r:radioShowMd` - Sonos-specific radio show metadata
+
+**Important:** Metadata must be passed as an options object to `setAVTransportURI`:
+```javascript
+await device.setAVTransportURI({
+  uri: audioUrl,
+  metadata: didlXmlString
+});
+```
 
 **`server/services/scheduler.js`**
 - Uses `node-cron` for cron-like scheduling
@@ -266,17 +310,36 @@ DATABASE_PATH=./podcast-alarm.db
 - Verify at least one feed is added
 - Check feeds have recent episodes with audio enclosures
 - Some feeds may be geo-restricted
+- Clear played_episodes table for testing: `DELETE FROM played_episodes;`
 
 **"Alarm didn't trigger"**
 - Check alarm enabled (toggle ON)
-- Verify correct weekdays selected
+- Verify correct weekdays selected (must have at least one day)
 - Check system time and timezone
-- Review logs: `tail -f logs/combined.log`
+- Review logs: `tail -f logs/server.log`
 
 **"Playback fails on Sonos"**
 - Check speakers powered on and network connected
 - Verify podcast feeds have valid MP3 URLs
 - Some podcast CDNs may block non-browser requests
+- Check for UPnP errors in logs (error 701 = invalid state transition)
+
+**"No metadata in Sonos app"**
+- Desktop app should show full metadata (title, artwork, podcast name)
+- Mobile app metadata depends on Sonos app version and device
+- Verify metadata is being sent: check "Current track info" in logs
+- Clear Sonos app cache or reinstall if mobile app shows "No Content"
+
+**"UPnP Error 701"**
+- This means "invalid state transition" - usually timing issue
+- Fixed by proper stop → flush → setAVTransportURI → queue → play sequence
+- Adding delays (500ms) between operations helps
+- Ensure metadata passed as options object, not separate parameter
+
+**"Weekday toggles not saving"**
+- Frontend must use 1/0 values, not boolean true/false
+- Backend converts truthy/falsy to 1/0 for SQLite
+- Check AlarmConfig.js uses: `localConfig[day] ? 0 : 1`
 
 ## Project Status
 
