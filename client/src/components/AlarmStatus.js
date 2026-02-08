@@ -19,7 +19,7 @@ function AlarmStatus() {
         alarm.getConfig(),
         alarm.getStatus()
       ]);
-      setConfig(configRes.data.config);
+      setConfig(configRes.data);
       setStatus(statusRes.data);
       setLoading(false);
     } catch (err) {
@@ -36,7 +36,7 @@ function AlarmStatus() {
     } catch (err) {
       console.error('Error toggling alarm:', err);
       // Show user-friendly error message
-      const errorMsg = err.response?.data?.error || 'Failed to update alarm. Please ensure you have configured the schedule, speakers, and Spotify connection.';
+      const errorMsg = err.response?.data?.error || 'Failed to update alarm. Please ensure you have configured the schedule, speakers, and podcast feeds.';
       setErrorMessage(errorMsg);
       // Clear error after 5 seconds
       setTimeout(() => setErrorMessage(''), 5000);

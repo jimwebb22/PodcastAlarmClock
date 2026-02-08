@@ -31,15 +31,22 @@ async function buildPlaylistQueue() {
 
     console.log(`Found ${episodes.length} unplayed episodes from configured feeds`);
 
-    // Build queue with MP3 URLs
+    // Build queue with MP3 URLs and metadata
     const queue = [];
     const episodeNames = [];
+    const episodeMetadata = [];
     const episodesToMark = [];
 
     for (const episode of episodes) {
       if (episode.audioUrl) {
         queue.push(episode.audioUrl);
         episodeNames.push(`${episode.feedName}: ${episode.title}`);
+        episodeMetadata.push({
+          title: episode.title,
+          artist: episode.feedName,
+          albumArt: episode.image,
+          audioUrl: episode.audioUrl
+        });
         episodesToMark.push(episode);
         console.log(`Added: ${episode.feedName} - ${episode.title}`);
       }
@@ -67,6 +74,7 @@ async function buildPlaylistQueue() {
     return {
       queue,
       episodeNames,
+      episodeMetadata,
       episodeCount: episodes.length,
       trackCount: queue.length
     };

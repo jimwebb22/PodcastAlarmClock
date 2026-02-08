@@ -29,7 +29,8 @@ function AlarmConfig() {
   };
 
   const handleWeekdayToggle = (day) => {
-    setLocalConfig({ ...localConfig, [day]: !localConfig[day] });
+    // Toggle between 1 and 0 (not boolean) to match database format
+    setLocalConfig({ ...localConfig, [day]: localConfig[day] ? 0 : 1 });
   };
 
   const handleVolumeChange = (e) => {

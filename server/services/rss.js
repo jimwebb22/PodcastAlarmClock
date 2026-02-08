@@ -24,10 +24,12 @@ async function parseFeed(feedUrl) {
   try {
     const feed = await parser.parseURL(feedUrl);
 
+    const feedImage = feed.image?.url || feed.itunes?.image || null;
+
     return {
       title: feed.title || 'Unknown Podcast',
       description: feed.description || '',
-      image: feed.image?.url || feed.itunes?.image || null,
+      image: feedImage,
       link: feed.link || feedUrl,
       episodes: (feed.items || []).map(item => ({
         title: item.title || 'Untitled Episode',
@@ -35,7 +37,8 @@ async function parseFeed(feedUrl) {
         pubDate: item.pubDate || item.isoDate || null,
         audioUrl: getAudioUrl(item),
         duration: item.duration || item.itunes?.duration || null,
-        guid: item.guid || item.link || item.title
+        guid: item.guid || item.link || item.title,
+        image: item.itunesImage?.href || item.itunes?.image || feedImage
       }))
     };
   } catch (error) {

@@ -46,7 +46,7 @@ async function triggerAlarm() {
     }
 
     console.log(`Building playlist for alarm...`);
-    const { queue, episodeNames } = await playlist.buildPlaylistWithRetry();
+    const { queue, episodeNames, episodeMetadata } = await playlist.buildPlaylistWithRetry();
 
     console.log(`Built playlist with ${queue.length} items, ${episodeNames.length} episodes`);
 
@@ -105,7 +105,7 @@ async function triggerAlarm() {
 
     // Play the queue
     console.log('Starting playback...');
-    await sonos.playQueue(coordinatorUuid, queue);
+    await sonos.playQueue(coordinatorUuid, queue, episodeNames, episodeMetadata);
 
     // Update state
     isPlaying = true;

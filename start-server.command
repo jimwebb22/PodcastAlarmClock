@@ -62,5 +62,5 @@ echo ""
 echo "═══════════════════════════════════════════════════════"
 echo ""
 
-# Start server (will run in foreground so you can see logs)
-npm start
+# Start server in production mode (will run in foreground so you can see logs)
+npm run prod
