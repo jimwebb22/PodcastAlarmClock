@@ -23,6 +23,41 @@ This document provides context and guidance for Claude (or future developers) wo
 
 ## Recent Updates (February 2026)
 
+### Session: February 9, 2026 - Queue Playback Fix & Infrastructure
+
+**Critical Sonos Queue Fix:**
+- **Problem**: Only first episode played; queue showed "(Not in Use)"; playback stopped after first track
+- **Root Cause**: Tracks were queued but Sonos was playing from cached/old transport state instead of the new queue
+- **Solution**: After populating queue, explicitly set AVTransport URI to `x-rincon-queue:RINCON_<device-id>#0` protocol
+- **Result**: Queue now shows "In Use", all episodes play sequentially, no cached state interference
+
+**PM2 Background Server Management:**
+- Installed and configured PM2 process manager for production deployment
+- Server now runs in background, survives terminal closure
+- Updated `start-server.command` and `stop-server.command` to be PM2-aware
+- Added npm scripts: `pm2:start`, `pm2:stop`, `pm2:restart`, `pm2:logs`, `pm2:status`
+- Documented manual startup (default) vs optional auto-start on boot workflows
+- Fixed PM2 app name throughout documentation (`podcast-alarm-clock`)
+
+**Documentation Overhaul:**
+- **README.md**: Added complete API endpoint documentation, PM2 setup instructions, troubleshooting for played episodes and queue issues
+- **CLAUDE.md**: Enhanced with queue management details, played episodes tracking, maintenance tasks section, PM2 configuration
+- **TESTING.md**: Complete rewrite from Spotify-based v1.0 to RSS-based v2.0 implementation
+- **Historical docs**: Marked v1.0 design/implementation plans as historical reference
+
+**Custom Branding:**
+- Replaced React atom logo with alarm clock favicon (⏰)
+- Created custom SVG and PNG icons (favicon.svg, logo192.png, logo512.png)
+- Updated favicon.ico with 32x32 alarm clock icon
+- Added cache-busting parameters for Safari compatibility
+- Icons now display correctly in browser tabs, iOS/Android home screens, bookmarks
+
+**Developer Experience:**
+- Added comprehensive inline code comments explaining queue fix
+- Documented `x-rincon-queue` protocol for future developers
+- Added maintenance tasks section with database management commands
+- Improved troubleshooting documentation for common testing scenarios
+
 **Metadata Support Added:**
 - Full DIDL-Lite XML metadata for Sonos "Now Playing" display
 - Episode titles, podcast names, and artwork appear in Sonos apps
@@ -455,6 +490,52 @@ All core features implemented:
 - Local music file support
 - Internet radio integration
 
+## Maintenance Tasks
+
+### Clearing Played Episodes (Testing/Development)
+
+During testing, you may need to clear the played episodes history to replay content:
+
+**Via API:**
+```bash
+curl -X DELETE http://localhost:3001/api/podcasts/played
+```
+
+**Via Database:**
+```bash
+sqlite3 podcast-alarm.db "DELETE FROM played_episodes;"
+```
+
+**Via SQL with Selective Clearing:**
+```bash
+# Clear all played episodes
+sqlite3 podcast-alarm.db "DELETE FROM played_episodes;"
+
+# Clear played episodes for a specific feed
+sqlite3 podcast-alarm.db "DELETE FROM played_episodes WHERE feed_id = 1;"
+
+# View played episodes count
+sqlite3 podcast-alarm.db "SELECT feed_name, COUNT(*) FROM played_episodes pe JOIN podcast_feeds pf ON pe.feed_id = pf.id GROUP BY feed_name;"
+```
+
+### Database Maintenance
+
+**Backup database:**
+```bash
+cp podcast-alarm.db podcast-alarm.db.backup
+```
+
+**Reset database completely:**
+```bash
+rm podcast-alarm.db
+pm2 restart podcast-alarm-clock  # Will recreate with schema
+```
+
+**Query alarm logs:**
+```bash
+sqlite3 podcast-alarm.db "SELECT datetime(triggered_at, 'unixepoch', 'localtime') as time, success, episodes_played FROM alarm_logs ORDER BY triggered_at DESC LIMIT 10;"
+```
+
 ## Important Reminders
 
 1. **Never commit sensitive files:** `.env`, `podcast-alarm.db`, `node_modules/`
@@ -462,6 +543,7 @@ All core features implemented:
 3. **Speaker safety is critical** - verify fallback logic never plays on wrong speakers
 4. **Check logs regularly** - they contain valuable debugging information
 5. **Local network required** - Sonos speakers must be on same network as server
+6. **Clear played episodes** during testing to replay content
 
 ---
 

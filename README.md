@@ -210,6 +210,30 @@ PodcastAlarmClock/
 - Don't use `kill` commands directly (PM2 will restart the process)
 - To remove completely: `pm2 delete podcast-alarm-clock`
 
+### No Episodes Available / Test Alarm Not Playing
+
+- **All episodes marked as played**: The system tracks played episodes to avoid replaying content
+- **Clear played history**: Use the API endpoint to reset:
+  ```bash
+  curl -X DELETE http://localhost:3001/api/podcasts/played
+  ```
+- Or clear the database directly:
+  ```bash
+  sqlite3 podcast-alarm.db "DELETE FROM played_episodes;"
+  ```
+- After clearing, test the alarm again - it should find fresh episodes
+- Check logs to verify: `pm2 logs podcast-alarm-clock`
+
+### Queue Not Advancing to Next Episode
+
+- This was a known issue that has been **fixed** in the latest version
+- The system now uses the `x-rincon-queue` protocol to ensure sequential playback
+- If you're still experiencing this, make sure you've pulled the latest code and rebuilt:
+  ```bash
+  git pull origin main
+  npm run deploy
+  ```
+
 ## API Endpoints
 
 ### Health Check
