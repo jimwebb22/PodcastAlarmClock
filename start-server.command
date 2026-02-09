@@ -52,15 +52,46 @@ if [ ! -d "node_modules" ]; then
     echo ""
 fi
 
-# Start the server
-echo -e "${GREEN}✓ Starting server...${NC}"
-echo ""
-echo -e "${BLUE}Server will start on: ${GREEN}http://localhost:3001${NC}"
-echo ""
-echo -e "${BLUE}Press ${RED}Ctrl+C${BLUE} to stop the server${NC}"
-echo ""
-echo "═══════════════════════════════════════════════════════"
-echo ""
+# Check if PM2 is installed
+if command -v pm2 &> /dev/null; then
+    echo -e "${GREEN}✓ Starting server with PM2 (background mode)...${NC}"
+    echo ""
 
-# Start server in production mode (will run in foreground so you can see logs)
-npm run prod
+    # Check if already running in PM2
+    if pm2 describe podcast-alarm-clock > /dev/null 2>&1; then
+        echo -e "${BLUE}ℹ️  Restarting existing PM2 process...${NC}"
+        pm2 restart podcast-alarm-clock
+    else
+        echo -e "${BLUE}ℹ️  Starting new PM2 process...${NC}"
+        npm run pm2:start
+    fi
+
+    echo ""
+    echo -e "${GREEN}✓ Server started in background!${NC}"
+    echo ""
+    echo -e "${BLUE}Server running on: ${GREEN}http://localhost:3001${NC}"
+    echo ""
+    echo -e "${BLUE}Commands:${NC}"
+    echo "  • View logs:    npm run pm2:logs"
+    echo "  • Check status: npm run pm2:status"
+    echo "  • Stop server:  Run stop-server.command"
+    echo ""
+    echo "═══════════════════════════════════════════════════════"
+    echo ""
+    read -p "Press Enter to exit..."
+else
+    echo -e "${RED}⚠️  PM2 not installed - starting in foreground mode${NC}"
+    echo -e "${BLUE}   To use background mode: sudo npm install -g pm2${NC}"
+    echo ""
+    echo -e "${GREEN}✓ Starting server...${NC}"
+    echo ""
+    echo -e "${BLUE}Server will start on: ${GREEN}http://localhost:3001${NC}"
+    echo ""
+    echo -e "${BLUE}Press ${RED}Ctrl+C${BLUE} to stop the server${NC}"
+    echo ""
+    echo "═══════════════════════════════════════════════════════"
+    echo ""
+
+    # Start server in production mode (will run in foreground)
+    npm run prod
+fi

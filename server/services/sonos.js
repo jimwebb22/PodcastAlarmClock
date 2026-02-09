@@ -162,39 +162,15 @@ async function playQueue(coordinatorUuid, audioUrls, episodeNames = [], episodeM
     await coordinator.deviceObject.flush();
     console.log('Cleared queue');
 
-    // Set the first track as the transport URI (replaces current source)
-    const firstEpisode = episodeNames[0] || audioUrls[0].substring(0, 80);
-    console.log(`Loading: ${firstEpisode}`);
-
-    // Use metadata if available
-    if (episodeMetadata.length > 0 && episodeMetadata[0]) {
-      console.log(`Metadata for track 0:`, JSON.stringify(episodeMetadata[0], null, 2));
-      const metadata = createDidlMetadata(episodeMetadata[0]);
-      console.log(`DIDL metadata created (length: ${metadata.length} chars)`);
-      try {
-        // Pass as options object, not separate parameters
-        await coordinator.deviceObject.setAVTransportURI({
-          uri: audioUrls[0],
-          metadata: metadata
-        });
-      } catch (err) {
-        console.error('Error setting metadata:', err.message);
-        // Fallback without metadata
-        await coordinator.deviceObject.setAVTransportURI(audioUrls[0]);
-      }
-    } else {
-      console.log('No metadata available for first track');
-      await coordinator.deviceObject.setAVTransportURI(audioUrls[0]);
-    }
-
-    // Add remaining tracks to the queue
-    for (let i = 1; i < audioUrls.length; i++) {
+    // Add ALL tracks to the queue (including the first one)
+    console.log(`Adding ${audioUrls.length} tracks to queue...`);
+    for (let i = 0; i < audioUrls.length; i++) {
       const episodeName = episodeNames[i] || audioUrls[i].substring(0, 80);
-      console.log(`Queuing [${i}/${audioUrls.length - 1}]: ${episodeName}`);
+      console.log(`Queuing [${i + 1}/${audioUrls.length}]: ${episodeName}`);
 
       // Use metadata if available
       if (episodeMetadata[i]) {
-        console.log(`Metadata for track ${i}:`, JSON.stringify(episodeMetadata[i], null, 2));
+        console.log(`  -> With metadata: ${episodeMetadata[i].title}`);
         const metadata = createDidlMetadata(episodeMetadata[i]);
         try {
           await coordinator.deviceObject.queue({
@@ -207,17 +183,75 @@ async function playQueue(coordinatorUuid, audioUrls, episodeNames = [], episodeM
           await coordinator.deviceObject.queue(audioUrls[i]);
         }
       } else {
-        console.log(`No metadata for track ${i}`);
+        console.log(`  -> No metadata available`);
         await coordinator.deviceObject.queue(audioUrls[i]);
       }
     }
 
-    // Wait a moment before playing
+    console.log(`All ${audioUrls.length} tracks queued successfully`);
+
+    // Wait a moment for queue to settle
+    await new Promise(resolve => setTimeout(resolve, 1000));
+
+    // CRITICAL: Set play mode to NORMAL (not shuffle, not repeat)
+    try {
+      await coordinator.deviceObject.setPlayMode('NORMAL');
+      console.log('✓ Play mode set to NORMAL');
+    } catch (err) {
+      console.error('Warning: Could not set play mode:', err.message);
+    }
+
+    // Get queue info to verify tracks are there
+    try {
+      const queue = await coordinator.deviceObject.getQueue();
+      console.log(`✓ Queue contains ${queue.items.length} items`);
+      if (queue.items.length > 0) {
+        console.log(`  First item: ${queue.items[0].title || queue.items[0].uri}`);
+        if (queue.items.length > 1) {
+          console.log(`  Second item: ${queue.items[1].title || queue.items[1].uri}`);
+        }
+      }
+    } catch (err) {
+      console.error('Warning: Could not get queue info:', err.message);
+    }
+
+    // CRITICAL FIX: Set the AVTransport to use the queue
+    // Problem: Even though tracks are queued, Sonos may play from cached/old state
+    // Solution: Explicitly set AVTransport URI to the queue using x-rincon-queue protocol
+    // Format: x-rincon-queue:RINCON_<device-id>#0
+    //   - RINCON_xxx is the device's unique ID
+    //   - #0 means start from beginning of queue
+    // This ensures:
+    //   1. Queue shows "In Use" (not "Not in Use")
+    //   2. Playback continues sequentially through all queued tracks
+    //   3. No cached state interferes with new playback session
+    const deviceInfo = await coordinator.deviceObject.deviceDescription();
+    const rinconId = deviceInfo.UDN.replace('uuid:', '');
+    const queueURI = `x-rincon-queue:${rinconId}#0`;
+
+    console.log(`Setting AVTransport to queue: ${queueURI}`);
+    try {
+      await coordinator.deviceObject.setAVTransportURI(queueURI);
+      console.log('✓ AVTransport now pointing to queue');
+    } catch (err) {
+      console.error('ERROR: Failed to set queue as transport:', err.message);
+      throw err;
+    }
+
+    // Wait for transport to update
     await new Promise(resolve => setTimeout(resolve, 500));
 
-    // Start playback from track 1
+    // Now select track 1 in the queue
+    try {
+      await coordinator.deviceObject.selectTrack(1);
+      console.log('✓ Selected track 1 in queue');
+    } catch (err) {
+      console.error('Warning: Could not select track:', err.message);
+    }
+
+    // Start playback
     await coordinator.deviceObject.play();
-    console.log(`Started playback of ${audioUrls.length} episodes`);
+    console.log(`✓ Started playback from queue with ${audioUrls.length} episodes`);
 
     // Verify playback started and check current track info
     const state = await coordinator.deviceObject.getCurrentState();

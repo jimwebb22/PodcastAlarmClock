@@ -34,6 +34,7 @@ This document provides context and guidance for Claude (or future developers) wo
 - Enhanced reliability with proper stop/flush/queue sequence
 - Metadata passed as options object to ensure proper display
 - Added Rincon-specific tags (r:streamContent, r:radioShowMd) for mobile apps
+- **CRITICAL FIX:** Queue continuity issue resolved by setting AVTransport URI to queue source (`x-rincon-queue:RINCON_xxx#0`) after populating queue, ensuring sequential playback through all episodes
 
 **Frontend Fixes:**
 - AlarmStatus component reads config from correct API path
@@ -44,6 +45,12 @@ This document provides context and guidance for Claude (or future developers) wo
 - Human-readable episode names in server logs instead of URLs
 - Comprehensive debugging output for metadata pipeline
 - Clear separation of concerns: RSS → Playlist → Scheduler → Sonos
+
+**Played Episodes Tracking:**
+- System tracks all played episodes to avoid replaying content
+- `played_episodes` table stores episode GUID, title, and play timestamp
+- Episodes can be marked as unplayed by clearing the history
+- Foreign key relationship with podcast feeds for automatic cleanup
 
 ## Project Structure
 
@@ -113,6 +120,7 @@ PodcastAlarmClock/
 - Stops playback and ungroups speakers
 - **Safety:** Only plays on configured speakers, never falls back to others
 - **Metadata:** Formats episode info for Sonos "Now Playing" display
+- **Queue Management:** Uses `x-rincon-queue` URI protocol to ensure Sonos plays from queue (not cached state), enabling sequential playback through all queued episodes
 
 **DIDL-Lite Metadata Format:**
 The system creates XML metadata for each episode with:
@@ -142,8 +150,9 @@ await device.setAVTransportURI({
 
 **`server/db/schema.sql`**
 - SQLite schema definition
-- Tables: `alarm_config`, `selected_speakers`, `podcast_feeds`, `alarm_logs`
+- Tables: `alarm_config`, `selected_speakers`, `podcast_feeds`, `alarm_logs`, `played_episodes`
 - Single alarm configuration (one row in `alarm_config`)
+- Played episodes tracking to prevent replaying content
 
 **`server/db/models.js`**
 - Query functions for all database operations
@@ -198,19 +207,80 @@ npm start
 ```
 
 ### Production Build and Deployment
+
+#### Initial Setup (One-Time)
+
 ```bash
-# Build React app and deploy with PM2
+# Install PM2 globally
+sudo npm install -g pm2
+
+# Build and deploy
 npm run deploy
-
-# Check PM2 status
-pm2 status
-
-# View logs
-pm2 logs podcast-alarm
-
-# Restart app
-pm2 restart podcast-alarm
 ```
+
+This builds the React app and starts the server with PM2 in background mode.
+
+#### Server Management
+
+**Using Command Files (Recommended for End Users):**
+```bash
+# Start: Double-click start-server.command
+# Stop: Double-click stop-server.command
+```
+
+The command files automatically detect if PM2 is installed and use it for background operation.
+
+**Using NPM Scripts:**
+```bash
+npm run pm2:start      # Start server with PM2
+npm run pm2:stop       # Stop server
+npm run pm2:restart    # Restart server
+npm run pm2:status     # Check status
+npm run pm2:logs       # View logs (Ctrl+C to exit)
+```
+
+**Using PM2 Directly:**
+```bash
+pm2 start ecosystem.config.js       # Start with config file
+pm2 stop podcast-alarm-clock        # Stop the process
+pm2 restart podcast-alarm-clock     # Restart
+pm2 delete podcast-alarm-clock      # Remove completely
+pm2 logs podcast-alarm-clock        # View logs
+pm2 status                          # List all processes
+pm2 monit                           # Real-time monitoring
+```
+
+#### Startup Behavior
+
+**Default (Manual Start):**
+- Server does NOT auto-start on Mac reboot
+- User must manually start server after restart via:
+  - `start-server.command` (double-click), or
+  - `npm run pm2:start`
+
+**Optional Auto-Start Configuration:**
+```bash
+# Enable auto-start on boot
+pm2 startup
+
+# Follow the command it outputs (requires sudo)
+# Example: sudo env PATH=$PATH:/usr/local/bin pm2 startup launchd -u username --hp /Users/username
+
+# Save current PM2 process list
+pm2 save
+
+# Disable auto-start
+pm2 unstartup
+
+# Update saved process list
+pm2 save  # (after adding/removing processes)
+```
+
+**Auto-Start Notes:**
+- PM2 creates a LaunchAgent on macOS to start processes on boot
+- Saved process list stored in `~/.pm2/dump.pm2`
+- Only processes running at time of `pm2 save` are restored
+- Use `pm2 resurrect` to manually restore saved processes
 
 ### Testing
 ```bash
@@ -228,8 +298,10 @@ tail -f logs/error.log
 - `GET /api/podcasts/feeds` - List all saved RSS feeds
 - `POST /api/podcasts/feeds` - Add new RSS feed (body: `{feedUrl}`)
 - `DELETE /api/podcasts/feeds/:id` - Remove a feed
-- `POST /api/podcasts/feeds/preview` - Preview feed before adding
-- `GET /api/podcasts/episodes` - Get latest episodes from all feeds
+- `POST /api/podcasts/feeds/preview` - Preview feed before adding (body: `{feedUrl}`)
+- `GET /api/podcasts/episodes` - Get latest episodes from all feeds (query: `?skipPlayed=true`)
+- `GET /api/podcasts/played` - Get played episodes history (query: `?limit=50&feedId=1`)
+- `DELETE /api/podcasts/played` - Clear played episodes history (query: `?feedId=1` optional)
 
 ### Alarm
 - `GET /api/alarm/config` - Get alarm configuration
@@ -240,9 +312,12 @@ tail -f logs/error.log
 - `GET /api/alarm/logs` - Get recent alarm logs
 
 ### Speakers
-- `GET /api/speakers/discover` - Discover Sonos speakers
-- `GET /api/speakers/selected` - Get selected speakers
-- `POST /api/speakers/selected` - Save selected speakers
+- `GET /api/speakers/discover` - Discover Sonos speakers on network
+- `GET /api/speakers/selected` - Get currently selected speakers
+- `POST /api/speakers/selected` - Save selected speakers (body: `{speakers: [{name, uuid}]}`)
+
+### Health Check
+- `GET /health` - Server health check (returns `{status, timestamp}`)
 
 ## Adding a Podcast
 
@@ -279,6 +354,7 @@ Popular podcast RSS feed sources:
   - `selected_speakers` - which Sonos speakers to use
   - `podcast_feeds` - RSS feed URLs and names
   - `alarm_logs` - execution history
+  - `played_episodes` - tracks played episodes to avoid replays (GUID, title, audio URL, timestamps)
 
 ### Playlist Building
 1. Fetch newest episode from each configured feed
@@ -299,7 +375,7 @@ DATABASE_PATH=./podcast-alarm.db
 **"No speakers discovered"**
 - Verify Sonos speakers on same network
 - Check firewall settings (may block SSDP discovery)
-- Try restarting app: `pm2 restart podcast-alarm`
+- Try restarting app: `pm2 restart podcast-alarm-clock`
 
 **"Failed to parse feed"**
 - Verify the URL is a valid RSS feed (not a webpage)
@@ -340,6 +416,18 @@ DATABASE_PATH=./podcast-alarm.db
 - Frontend must use 1/0 values, not boolean true/false
 - Backend converts truthy/falsy to 1/0 for SQLite
 - Check AlarmConfig.js uses: `localConfig[day] ? 0 : 1`
+
+**"Server not running after Mac restart"**
+- By default, PM2 does NOT auto-start on reboot
+- User must manually start: `start-server.command` or `npm run pm2:start`
+- To enable auto-start: `pm2 startup` then `pm2 save`
+- Check if auto-start is configured: `pm2 list` (should show processes after reboot)
+
+**"stop-server.command doesn't work / server restarts immediately"**
+- PM2 has autorestart enabled by default
+- Use `stop-server.command` (now PM2-aware) or `npm run pm2:stop`
+- Do NOT use `kill -9` on PM2-managed processes (PM2 will restart them)
+- To completely remove: `pm2 delete podcast-alarm-clock`
 
 ## Project Status
 

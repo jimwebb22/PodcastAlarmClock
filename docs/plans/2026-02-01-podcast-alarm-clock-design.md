@@ -1,8 +1,10 @@
-# Podcast Alarm Clock - Design Document
+# Podcast Alarm Clock - Design Document (v1.0 - Historical)
 
 **Date:** 2026-02-01
-**Status:** Approved
+**Status:** Historical - Superseded by v2.0 RSS Implementation
 **Target:** Single home, local Mac mini deployment
+
+> **⚠️ HISTORICAL DOCUMENT:** This design document reflects the original v1.0 Spotify-based implementation. The project has since been refactored to v2.0 which uses RSS feeds instead of Spotify, removing all external authentication requirements. See CLAUDE.md and README.md for current architecture.
 
 ---
 

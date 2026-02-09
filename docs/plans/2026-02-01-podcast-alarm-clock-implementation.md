@@ -1,4 +1,6 @@
-# Podcast Alarm Clock Implementation Plan
+# Podcast Alarm Clock Implementation Plan (v1.0 - Historical)
+
+> **⚠️ HISTORICAL DOCUMENT:** This implementation plan was for the original v1.0 Spotify-based version. The project has been refactored to v2.0 which uses RSS feeds instead of Spotify. This document is kept for historical reference only.
 
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 

@@ -1,239 +1,373 @@
 # Testing Checklist
 
-This document provides a comprehensive testing checklist for the Podcast Alarm Clock application.
+This document provides a comprehensive testing checklist for the Podcast Alarm Clock application (v2.0 - RSS-based).
 
 ## Backend API Testing
 
-### Spotify Authentication
-- [ ] `/api/auth/url` - Returns Spotify authorization URL
-- [ ] `/api/auth/callback?code=XXX` - Exchanges code for tokens
-- [ ] `/api/auth/status` - Returns authentication status
-- [ ] Token refresh works automatically when expired
-- [ ] Handles invalid or expired refresh tokens gracefully
+### Health Check
+- [ ] `GET /health` - Returns server health status
+  - [ ] Returns `{status: 'ok', timestamp}`
+  - [ ] Responds quickly (< 100ms)
 
 ### Alarm Configuration
 - [ ] `GET /api/alarm/config` - Returns current alarm configuration
-- [ ] `POST /api/alarm/config` - Updates alarm configuration
+  - [ ] Returns time, enabled, weekdays, volume
+  - [ ] Handles database errors gracefully
+- [ ] `PUT /api/alarm/config` - Updates alarm configuration
   - [ ] Validates time format (HH:MM)
   - [ ] Validates volume (0-100)
-  - [ ] Validates weekday selections
-  - [ ] Validates music source options
+  - [ ] Validates at least one weekday selected when enabling
+  - [ ] Converts weekday values to 1/0 for SQLite
+  - [ ] Reschedules alarm after update
+  - [ ] Returns success/error response
+- [ ] `GET /api/alarm/status` - Returns alarm status
+  - [ ] Shows if alarm is scheduled
+  - [ ] Shows next trigger time
+  - [ ] Shows if currently playing
 - [ ] `POST /api/alarm/test` - Triggers test alarm immediately
-  - [ ] Builds playlist correctly
+  - [ ] Builds playlist from RSS feeds
   - [ ] Groups speakers properly
   - [ ] Starts playback at configured volume
+  - [ ] Includes DIDL-Lite metadata
+  - [ ] Returns immediately (runs in background)
 - [ ] `POST /api/alarm/stop` - Stops current playback
-  - [ ] Clears queue
+  - [ ] Clears Sonos queue
   - [ ] Ungroups speakers
-  - [ ] Returns speakers to previous state
+  - [ ] Returns success confirmation
+- [ ] `GET /api/alarm/logs` - Get recent alarm logs
+  - [ ] Returns logs with timestamps
+  - [ ] Shows success/failure status
+  - [ ] Includes error messages if any
+  - [ ] Respects limit query parameter
 
 ### Sonos Speakers
-- [ ] `GET /api/speakers` - Returns list of discovered speakers
-  - [ ] Discovers all speakers on network
-  - [ ] Returns correct speaker metadata (name, UUID, room)
+- [ ] `GET /api/speakers/discover` - Discovers Sonos speakers
+  - [ ] Finds all speakers on local network
+  - [ ] Returns speaker name, UUID, model
   - [ ] Handles network discovery errors
-- [ ] `POST /api/speakers/select` - Saves selected speakers
-  - [ ] Validates speaker UUIDs
+  - [ ] Times out appropriately (< 10 seconds)
+- [ ] `GET /api/speakers/selected` - Gets selected speakers
+  - [ ] Returns currently configured speakers
+  - [ ] Maps database fields to frontend format
+- [ ] `POST /api/speakers/selected` - Saves selected speakers
+  - [ ] Validates speaker array format
+  - [ ] Maps frontend fields to database format
   - [ ] Updates database correctly
-  - [ ] Returns updated configuration
+  - [ ] Returns success confirmation
 
-### Podcast Management
-- [ ] `GET /api/podcasts/followed` - Returns followed podcasts from Spotify
-  - [ ] Requires authentication
-  - [ ] Returns correct podcast metadata
-  - [ ] Handles API errors gracefully
-- [ ] `POST /api/podcasts/select` - Saves selected podcasts
-  - [ ] Validates Spotify show IDs
-  - [ ] Updates database correctly
-  - [ ] Returns updated configuration
+### Podcast Management (RSS)
+- [ ] `GET /api/podcasts/feeds` - Lists saved RSS feeds
+  - [ ] Returns all podcast feeds
+  - [ ] Includes feed name and URL
+  - [ ] Shows creation timestamp
+- [ ] `POST /api/podcasts/feeds` - Adds new RSS feed
+  - [ ] Validates URL format
+  - [ ] Parses feed to extract title
+  - [ ] Validates feed has audio enclosures
+  - [ ] Prevents duplicate feeds
+  - [ ] Returns feed info and episode count
+  - [ ] Handles invalid feeds gracefully
+- [ ] `DELETE /api/podcasts/feeds/:id` - Removes feed
+  - [ ] Validates feed ID
+  - [ ] Removes feed from database
+  - [ ] Cascades to played_episodes
+  - [ ] Returns success confirmation
+- [ ] `POST /api/podcasts/feeds/preview` - Previews feed
+  - [ ] Validates URL format
+  - [ ] Returns feed metadata
+  - [ ] Shows sample episodes
+  - [ ] Doesn't save to database
+- [ ] `GET /api/podcasts/episodes` - Gets latest episodes
+  - [ ] Returns newest episode from each feed
+  - [ ] Respects skipPlayed parameter
+  - [ ] Includes episode metadata
+  - [ ] Handles feed fetch errors
+- [ ] `GET /api/podcasts/played` - Gets played episodes
+  - [ ] Returns played episodes history
+  - [ ] Respects limit parameter
+  - [ ] Filters by feedId if provided
+  - [ ] Includes timestamps
+- [ ] `DELETE /api/podcasts/played` - Clears played history
+  - [ ] Clears all played episodes if no feedId
+  - [ ] Clears specific feed if feedId provided
+  - [ ] Returns deletion count
+
+### RSS Parsing Service
+- [ ] Parses valid RSS feeds correctly
+- [ ] Extracts episode titles, audio URLs, GUIDs
+- [ ] Handles iTunes-specific tags
+- [ ] Extracts artwork URLs (episode-level and feed-level)
+- [ ] Handles missing enclosures gracefully
+- [ ] Times out after 30 seconds
+- [ ] Validates audio file format (MP3)
 
 ### Scheduler Service
-- [ ] Alarm schedules correctly on app startup
+- [ ] Initializes on app startup
+- [ ] Schedules alarm based on configuration
 - [ ] Respects enabled/disabled toggle
 - [ ] Triggers on correct weekdays only
-- [ ] Triggers at correct time (check timezone handling)
+- [ ] Triggers at correct time (check timezone)
 - [ ] Reschedules after configuration changes
 - [ ] Handles DST transitions correctly
 - [ ] Logs execution to database
+- [ ] Tracks played episodes to avoid replays
 
 ### Playlist Building Service
-- [ ] Fetches newest episodes from selected podcasts
-- [ ] Fetches tracks from selected music source (Daily Mix or Top Tracks)
-- [ ] Builds queue with alternating pattern (episode → 3 songs → episode...)
+- [ ] Fetches newest episode from each RSS feed
+- [ ] Sorts episodes by publication date (newest first)
+- [ ] Skips already-played episodes
+- [ ] Builds array of audio URLs with metadata
 - [ ] Handles missing episodes gracefully
-- [ ] Handles insufficient music tracks (reshuffles/recycles)
-- [ ] Returns empty playlist when no content available
+- [ ] Handles feed fetch errors
+- [ ] Returns empty playlist when no new content
+
+### Sonos Service
+- [ ] Discovers speakers via SSDP
+- [ ] Handles speaker grouping correctly
+- [ ] Creates DIDL-Lite metadata XML
+  - [ ] Includes episode title
+  - [ ] Includes podcast name (artist/creator)
+  - [ ] Includes artwork URL
+  - [ ] Includes Rincon-specific tags for mobile apps
+- [ ] Queues tracks with metadata
+  - [ ] Stops current playback
+  - [ ] Flushes queue
+  - [ ] Sets AVTransportURI with metadata
+  - [ ] Adds tracks to queue
+  - [ ] Starts playback
+- [ ] Sets volume correctly
+- [ ] Handles UPnP errors gracefully
+- [ ] Never plays on non-configured speakers (safety!)
+- [ ] Ungroups speakers after playback
 
 ## Frontend Testing
 
-### Alarm Status Component
-- [ ] Displays current alarm status (Ready/Playing/Not Configured)
-- [ ] Shows next alarm time correctly
-- [ ] Master toggle works (enables/disables alarm)
-- [ ] Visual feedback on toggle state change
-- [ ] Updates status when alarm is playing
+### AlarmStatus Component
+- [ ] Displays current alarm status
+- [ ] Shows next scheduled time correctly
+- [ ] Master toggle works (enables/disables)
+- [ ] Reads config from correct API path
+- [ ] Shows visual feedback on toggle
+- [ ] Updates when alarm is playing
 
-### Alarm Configuration Component
-- [ ] Time picker allows selecting hours and minutes
-- [ ] Weekday checkboxes work correctly
-- [ ] Volume slider updates value display
-- [ ] Save button persists changes to backend
-- [ ] Shows success/error feedback after save
+### AlarmConfig Component
+- [ ] Time picker allows selecting hours/minutes
+- [ ] Weekday toggles work correctly
+- [ ] Uses 1/0 values (not booleans) for weekdays
+- [ ] Volume slider updates display
+- [ ] Save button persists to backend
+- [ ] Shows success/error feedback
 - [ ] Loads existing configuration on mount
+- [ ] Validates at least one day selected
 
-### Sonos Speaker Selection Component
-- [ ] Discover Speakers button triggers discovery
+### SpeakerSelection Component
+- [ ] Discover button triggers speaker discovery
 - [ ] Displays all discovered speakers
-- [ ] Checkbox selection works correctly
-- [ ] Save button persists selected speakers
+- [ ] Checkbox selection works
+- [ ] Save button persists selection
 - [ ] Shows currently selected speakers
 - [ ] Handles discovery errors gracefully
+- [ ] Shows loading state during discovery
 
-### Podcast Selection Component
-- [ ] "Connect Spotify" button redirects to auth flow
-- [ ] Shows authenticated state after login
-- [ ] Loads followed podcasts after authentication
-- [ ] Checkbox selection works correctly
-- [ ] Search/filter functionality works
-- [ ] Save button persists selected podcasts
-- [ ] Shows loading state during fetch
+### PodcastSelection Component
+- [ ] Input field accepts RSS feed URLs
+- [ ] Add button validates and adds feed
+- [ ] Shows feed name after adding
+- [ ] Lists all saved feeds
+- [ ] Remove button deletes feeds
+- [ ] Shows error messages for invalid feeds
+- [ ] References "podcast feeds" not "Spotify"
+- [ ] No authentication required
 
-### Control Panel Component
-- [ ] "Test Alarm Now" button triggers immediate alarm
-- [ ] "Stop Playback" button stops current alarm
+### ControlPanel Component
+- [ ] "Test Alarm Now" triggers immediate alarm
+- [ ] "Stop Playback" stops current alarm
 - [ ] Shows playback status during test
-- [ ] Displays last alarm log (timestamp, success/failure)
-- [ ] Provides feedback on button actions
-
-### Music Source Selection
-- [ ] Dropdown shows all music source options
-- [ ] Selection persists on save
-- [ ] Loads current selection on mount
+- [ ] Displays recent alarm logs
+- [ ] Shows timestamps and success/failure
+- [ ] Provides feedback on actions
 
 ## Integration Testing
 
 ### End-to-End Alarm Flow
-1. [ ] Configure alarm (time, weekdays, volume)
-2. [ ] Select Sonos speakers
-3. [ ] Authenticate with Spotify
-4. [ ] Select podcasts
-5. [ ] Select music source
+1. [ ] Configure alarm time and weekdays
+2. [ ] Set volume level
+3. [ ] Discover Sonos speakers
+4. [ ] Select speakers to use
+5. [ ] Add RSS podcast feeds
 6. [ ] Enable alarm
 7. [ ] Trigger test alarm
-8. [ ] Verify playback starts correctly
-9. [ ] Stop playback
-10. [ ] Wait for scheduled alarm time
-11. [ ] Verify alarm triggers automatically
-12. [ ] Verify content plays in correct order (podcast → songs → podcast...)
+8. [ ] Verify playback starts with metadata
+9. [ ] Check episode info in Sonos app
+10. [ ] Stop playback
+11. [ ] Wait for scheduled time
+12. [ ] Verify alarm triggers automatically
+13. [ ] Verify played episodes tracked
 
 ### Error Scenarios
-- [ ] No speakers selected - shows appropriate error
-- [ ] No podcasts selected - falls back to music only
-- [ ] No Spotify authentication - shows "Connect Spotify" prompt
-- [ ] Speakers unavailable - tries configured speakers only, never falls back to others
-- [ ] Spotify API failure - retries and shows error if persistent
-- [ ] Network offline during alarm - logs error and fails gracefully
-- [ ] App restart - reloads configuration and reschedules alarm
+- [ ] No speakers selected - shows error
+- [ ] No podcast feeds - shows error
+- [ ] Speakers unavailable - fails safely, never uses wrong speakers
+- [ ] RSS feed unavailable - logs error and skips
+- [ ] Invalid RSS feed - validation prevents adding
+- [ ] Network offline - fails gracefully with error
+- [ ] App restart - reloads config and reschedules
+- [ ] All episodes played - clears history or notifies
 
-### Speaker Safety
+### Speaker Safety (CRITICAL)
 - [ ] Alarm ONLY plays on configured speakers
-- [ ] If configured speakers unavailable, does NOT play on other speakers
-- [ ] Fails gracefully if no configured speakers available
+- [ ] If configured speakers unavailable, does NOT play elsewhere
+- [ ] Fails gracefully if no speakers available
 - [ ] Logs error when speakers unavailable
+- [ ] Never falls back to random speakers
+
+### Played Episodes Tracking
+- [ ] Episodes marked as played after alarm
+- [ ] Same episode not played twice
+- [ ] Clearing history allows replay
+- [ ] Foreign key cascade deletes work
+- [ ] GUID-based tracking prevents duplicates
 
 ## Mobile Responsiveness
 
 Test on multiple devices/screen sizes:
 
-### Phone (iOS Safari, Chrome)
+### Phone (iOS Safari, Android Chrome)
 - [ ] Layout adjusts for narrow screens
-- [ ] Touch targets are appropriately sized
-- [ ] All controls accessible without horizontal scroll
+- [ ] Touch targets appropriately sized
+- [ ] No horizontal scroll required
 - [ ] Time picker works on mobile
 - [ ] Volume slider usable with touch
-- [ ] Buttons are finger-friendly size
+- [ ] Buttons finger-friendly
 
-### Tablet (iPad Safari, Chrome)
-- [ ] Layout uses available space effectively
-- [ ] All components visible and functional
-- [ ] Touch interactions work smoothly
+### Tablet (iPad, Android Tablet)
+- [ ] Layout uses space effectively
+- [ ] All components visible
+- [ ] Touch interactions smooth
 
 ### Desktop Browser
-- [ ] Layout looks clean and organized
+- [ ] Clean, organized layout
 - [ ] All features accessible
-- [ ] Responsive to window resizing
+- [ ] Responsive to window resize
 
 ## Performance Testing
 
-- [ ] App starts and loads configuration quickly (< 2 seconds)
-- [ ] Speaker discovery completes in reasonable time (< 10 seconds)
-- [ ] Podcast fetching completes quickly (< 5 seconds)
-- [ ] Test alarm triggers within 2 seconds
-- [ ] Database queries are fast
-- [ ] No memory leaks during long-running operation
+- [ ] App starts quickly (< 3 seconds)
+- [ ] Speaker discovery completes (< 10 seconds)
+- [ ] RSS feed parsing fast (< 5 seconds per feed)
+- [ ] Test alarm triggers quickly (< 2 seconds)
+- [ ] Database queries fast
+- [ ] No memory leaks during long operation
+- [ ] PM2 keeps app running continuously
 
 ## Production Deployment
 
-- [ ] PM2 starts app correctly with `npm run deploy`
+### PM2 Management
+- [ ] `npm run deploy` builds and starts with PM2
+- [ ] PM2 keeps app running in background
 - [ ] App restarts automatically on crash
-- [ ] Logs written to file correctly
+- [ ] `start-server.command` works correctly
+- [ ] `stop-server.command` stops PM2 process
+- [ ] Logs written to files correctly
+- [ ] Auto-restart on Mac boot (if configured)
+
+### Build Process
+- [ ] React frontend builds successfully
 - [ ] Environment variables loaded from .env
-- [ ] Build process completes successfully
-- [ ] Serves production React build at root URL
-- [ ] API routes work correctly with production build
+- [ ] Production build served at root URL
+- [ ] API routes work with production build
+- [ ] Static assets served correctly
 
 ## Database Testing
 
-- [ ] SQLite database initializes correctly on first run
-- [ ] Tables created with correct schema
+- [ ] SQLite database initializes on first run
+- [ ] Tables created with correct schema:
+  - [ ] `alarm_config` (single row, id=1)
+  - [ ] `selected_speakers`
+  - [ ] `podcast_feeds`
+  - [ ] `alarm_logs`
+  - [ ] `played_episodes`
 - [ ] Configuration persists across restarts
-- [ ] Selected speakers persist correctly
-- [ ] Selected podcasts persist correctly
-- [ ] Spotify tokens persist and refresh correctly
-- [ ] Alarm logs written correctly
+- [ ] Foreign key constraints work
+- [ ] Cascade deletes work correctly
+- [ ] Default values inserted
 
 ## Logs and Monitoring
 
-- [ ] Application logs written to logs/combined.log
-- [ ] Error logs written to logs/error.log
-- [ ] Logs include timestamps
-- [ ] Log rotation configured (if using Winston)
+- [ ] Server logs to console with timestamps
+- [ ] PM2 logs to `logs/out.log`
+- [ ] PM2 errors to `logs/err.log`
 - [ ] Alarm execution logged with details
-- [ ] Errors logged with stack traces
+- [ ] Errors include helpful messages
+- [ ] Human-readable episode names in logs
+- [ ] Metadata pipeline debugging output
+
+## Metadata Testing
+
+### Desktop Sonos App
+- [ ] Episode title displays
+- [ ] Podcast name displays as artist
+- [ ] Artwork displays correctly
+- [ ] Queue shows episode info
+
+### Mobile Sonos App
+- [ ] Episode title displays
+- [ ] Podcast name displays
+- [ ] Artwork displays
+- [ ] "Now Playing" shows metadata
+- [ ] Radio show metadata appears
+
+### DIDL-Lite XML
+- [ ] All required tags present
+- [ ] Special characters escaped
+- [ ] URIs properly formatted
+- [ ] Namespace declarations correct
 
 ---
 
 ## Testing Notes
 
 ### Manual Testing
-For end-to-end testing, use the "Test Alarm Now" button in the web UI. This triggers the full alarm sequence immediately without waiting for the scheduled time.
+Use the "Test Alarm Now" button in the web UI to trigger the full alarm sequence immediately without waiting for the scheduled time.
 
 ### Automated Testing
-Currently, the project uses manual testing. Future enhancements could include:
-- Unit tests for services (Spotify, Sonos, Playlist building)
+Currently uses manual testing. Future enhancements:
+- Unit tests for RSS parsing
 - Integration tests for API endpoints
-- React component tests with Jest/React Testing Library
+- React component tests with Jest
+- Sonos service mocking for tests
 
 ### Common Issues
 
 **Speakers not discovered:**
 - Verify Sonos speakers on same network
-- Check firewall settings
-- Try `npm run deploy` to restart app
+- Check firewall settings (SSDP)
+- Restart app: `npm run pm2:restart`
 
-**Spotify authentication fails:**
-- Verify CLIENT_ID and CLIENT_SECRET in .env
-- Check REDIRECT_URI matches Spotify app settings
-- Ensure callback URL accessible from browser
+**RSS feed fails to add:**
+- Verify URL is RSS feed, not webpage
+- Check feed has audio enclosures
+- Try feed URL in browser
+- Check for geo-restrictions
 
 **Alarm doesn't trigger:**
-- Check alarm is enabled (toggle ON)
-- Verify correct weekdays selected
-- Check system timezone matches expected time
-- Review logs for errors
+- Check alarm enabled (toggle ON)
+- Verify at least one weekday selected
+- Check system time and timezone
+- Review logs: `npm run pm2:logs`
+
+**No metadata in Sonos app:**
+- Desktop app should show full metadata
+- Mobile app depends on Sonos version
+- Check metadata XML in logs
+- Verify artwork URLs accessible
 
 **Playback fails:**
-- Verify Spotify Premium account
-- Check speakers are powered on and connected
+- Check speakers powered on
 - Verify network connectivity
-- Review logs for Sonos/Spotify errors
+- Check podcast CDN accessibility
+- Review logs for UPnP errors
+
+**Server won't start after reboot:**
+- Run `start-server.command`
+- Or enable auto-start: `pm2 startup && pm2 save`
