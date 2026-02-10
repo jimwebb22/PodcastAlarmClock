@@ -116,6 +116,15 @@ function PodcastSelection() {
           </div>
           <p className="text-xs text-gray-500">
             Paste the RSS feed URL of any podcast. You can usually find this on the podcast's website or by searching "[podcast name] RSS feed".
+            {' '}
+            <a
+              href="https://rss.com/tools/find-my-feed/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-blue-600 hover:text-blue-800 underline"
+            >
+              Need help finding a feed?
+            </a>
           </p>
         </form>
 
