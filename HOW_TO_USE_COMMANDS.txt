@@ -1,0 +1,117 @@
+╔════════════════════════════════════════════════════════════════╗
+║                                                                ║
+║           PODCAST ALARM CLOCK - COMMAND FILES GUIDE            ║
+║                                                                ║
+╚════════════════════════════════════════════════════════════════╝
+
+This folder contains several ".command" files that you can double-click
+to perform different tasks. Here's what each one does:
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📦 install.command
+──────────────────
+  WHEN TO USE: First time setup only
+  WHAT IT DOES:
+    • Checks for Node.js and installs it automatically if missing
+    • Installs all required software packages
+    • Builds the web interface
+    • Sets up PM2 for background operation
+    • Creates configuration files
+    • Makes all command files executable
+
+  REQUIREMENTS: None! Everything is installed automatically
+                (May ask for your Mac password for some installations)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+▶️  start-server.command
+────────────────────────
+  WHEN TO USE: Every time you want to run the alarm clock
+  WHAT IT DOES:
+    • Starts the server in the background
+    • Makes it available at http://localhost:3001
+    • Keeps running even if you close the window
+
+  RESULT: Server runs silently in background
+          You can close the terminal window after starting
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+⏹️  stop-server.command
+───────────────────────
+  WHEN TO USE: When you want to shut down the server
+  WHAT IT DOES:
+    • Stops the background server
+    • Frees up system resources
+    • Disables the alarm system
+
+  NOTE: The alarm won't work while the server is stopped
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🚀 deploy.command
+─────────────────
+  WHEN TO USE: After making code changes (developers only)
+  WHAT IT DOES:
+    • Rebuilds the React web interface
+    • Restarts the server with new changes
+
+  NOTE: Regular users don't need to use this
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+TYPICAL WORKFLOW:
+═════════════════
+
+1. First Time Setup:
+   └─> Double-click: install.command
+   └─> If prompted, allow Node.js installation (automatic)
+   └─> Wait for installation to complete (2-5 minutes)
+
+2. Daily Use:
+   └─> Double-click: start-server.command
+   └─> Open browser to: http://localhost:3001
+   └─> Configure your alarm settings
+   └─> Close browser (server keeps running)
+
+3. When Done:
+   └─> Double-click: stop-server.command (optional)
+   └─> Server will stop
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+TROUBLESHOOTING:
+════════════════
+
+⚠️  "Permission Denied" Error
+    → Right-click the .command file
+    → Select "Open"
+    → Click "Open" in the security dialog
+
+⚠️  "Command Not Found" Error
+    → Make sure Node.js is installed
+    → Restart your computer after installing Node.js
+
+⚠️  Server Already Running
+    → The server is already started
+    → Just open http://localhost:3001 in your browser
+    → Or run stop-server.command first, then start again
+
+⚠️  Installation Failed
+    → Check that you have an internet connection
+    → Make sure Node.js is installed correctly
+    → Try running install.command again
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+NEED MORE HELP?
+═══════════════
+
+📖 See QUICKSTART.md - Detailed setup guide for beginners
+📖 See README.md - Complete documentation
+📖 See TROUBLESHOOTING.md - Common issues and solutions
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Questions? Check the documentation files in this folder.

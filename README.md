@@ -11,13 +11,37 @@ A local alarm clock system that plays podcasts from RSS feeds through Sonos spea
 - Support for multiple Sonos speakers with grouping
 - Mobile-responsive web interface
 
-## Prerequisites
+## Easy Installation (Recommended)
+
+**For non-technical users or first-time setup:**
+
+1. **Run the installer**:
+   - Double-click `install.command` in the project folder
+   - If Node.js is missing, the installer will automatically install it for you
+   - Enter your Mac password when prompted
+   - Wait 2-5 minutes for installation to complete
+
+2. **Start the server**:
+   - Double-click `start-server.command`
+   - Open http://localhost:3001 in your browser
+
+3. **Configure your alarm** (see Usage section below)
+
+**That's it!** The installer handles everything automatically, including Node.js installation.
+
+📖 **New to this?** See [QUICKSTART.md](QUICKSTART.md) for detailed step-by-step instructions with screenshots and troubleshooting tips.
+
+## Manual Installation (For Developers)
+
+If you prefer to use the command line:
+
+### Prerequisites
 
 - Node.js 16+
 - Sonos speakers on local network
-- PM2 (for production deployment): `npm install -g pm2`
+- PM2 (optional, for background operation): `npm install -g pm2`
 
-## Quick Start
+### Setup
 
 1. Install dependencies:
    ```bash
@@ -29,12 +53,21 @@ A local alarm clock system that plays podcasts from RSS feeds through Sonos spea
    cp .env.example .env
    ```
 
-3. Start the server:
+3. Build the React client:
    ```bash
-   npm start
+   npm run build
    ```
 
-4. Open http://localhost:3001 in your browser
+4. Start the server:
+   ```bash
+   # Option 1: Foreground mode
+   npm start
+
+   # Option 2: Background mode with PM2
+   npm run pm2:start
+   ```
+
+5. Open http://localhost:3001 in your browser
 
 ## Usage
 
