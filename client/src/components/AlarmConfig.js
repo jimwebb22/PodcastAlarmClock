@@ -78,12 +78,12 @@ function AlarmConfig() {
   ];
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-6">
-      <h2 className="text-2xl font-bold mb-6">Alarm Configuration</h2>
+    <div className="bg-white rounded-lg shadow-md p-4 sm:p-6 overflow-hidden">
+      <h2 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6">Alarm Configuration</h2>
 
       <div className="space-y-6">
         {/* Time Picker */}
-        <div>
+        <div className="min-w-0">
           <label className="block text-sm font-medium text-gray-700 mb-2">
             Alarm Time
           </label>
@@ -91,7 +91,8 @@ function AlarmConfig() {
             type="time"
             value={localConfig?.time || '07:00'}
             onChange={handleTimeChange}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-lg"
+            className="w-full box-border px-2 py-2 sm:px-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-base sm:text-lg"
+            style={{ maxWidth: '100%', width: 'calc(100% - 10px)' }}
           />
         </div>
 
@@ -105,7 +106,7 @@ function AlarmConfig() {
               <button
                 key={key}
                 onClick={() => handleWeekdayToggle(key)}
-                className={`px-4 py-2 rounded-lg font-medium transition ${
+                className={`px-3 py-2 sm:px-4 rounded-lg font-medium transition text-sm sm:text-base ${
                   localConfig?.[key]
                     ? 'bg-blue-500 text-white hover:bg-blue-600'
                     : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
