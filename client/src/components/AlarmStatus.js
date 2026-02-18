@@ -45,22 +45,14 @@ function AlarmStatus() {
 
   const getNextAlarm = () => {
     if (!config || !config.enabled) return null;
+    if (!status || !status.nextAlarm) return 'Not scheduled';
 
-    const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+    // Use the backend's calculated nextAlarm (which accounts for time passing)
+    const nextAlarmDate = new Date(status.nextAlarm);
     const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-    const today = new Date().getDay();
+    const fullDayName = dayNames[nextAlarmDate.getDay()];
 
-    for (let i = 0; i <= 7; i++) {
-      const dayIndex = (today + i) % 7;
-      const dayName = days[dayIndex];
-
-      if (config[dayName]) {
-        const fullDayName = dayNames[dayIndex];
-        return `${fullDayName} at ${config.time}`;
-      }
-    }
-
-    return 'Not scheduled';
+    return `${fullDayName} at ${config.time}`;
   };
 
   if (loading) {
