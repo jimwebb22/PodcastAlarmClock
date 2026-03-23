@@ -23,7 +23,14 @@ function initDatabase() {
           return;
         }
         console.log('Database schema initialized');
-        resolve(db);
+
+        // Migration: add speaker_ip column if not present (for existing databases)
+        db.run('ALTER TABLE selected_speakers ADD COLUMN speaker_ip TEXT', (migErr) => {
+          if (migErr && !migErr.message.includes('duplicate column')) {
+            console.error('Migration error adding speaker_ip:', migErr.message);
+          }
+          resolve(db);
+        });
       });
     });
   });

@@ -17,6 +17,7 @@ export const alarm = {
 // Speaker endpoints
 export const speakers = {
   discover: () => api.get('/speakers/discover'),
+  discoverByIp: (ip) => api.post('/speakers/discover-by-ip', { ip }),
   getSelected: () => api.get('/speakers/selected'),
   setSelected: (speakers) => api.post('/speakers/selected', { speakers })
 };

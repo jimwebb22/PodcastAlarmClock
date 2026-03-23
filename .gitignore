@@ -17,6 +17,11 @@ node_modules/
 logs/
 *.log
 
+# macOS app build artifacts
+PodcastAlarmClock.app/
+*.icns
+*.iconset/
+
 # OS files
 .DS_Store
 Thumbs.db

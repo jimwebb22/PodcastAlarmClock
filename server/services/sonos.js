@@ -1,41 +1,142 @@
-const { DeviceDiscovery } = require('sonos');
+const dgram = require('dgram');
+const { Sonos } = require('sonos');
+const { updateSpeakerIp } = require('../db/models');
 
 let discoveredDevices = [];
 let isDiscovering = false;
 
+// For test isolation only
+function __resetForTesting() {
+  discoveredDevices = [];
+  isDiscovering = false;
+}
+
 async function discoverSpeakers() {
-  return new Promise((resolve, reject) => {
-    if (isDiscovering) {
-      return resolve(discoveredDevices);
-    }
+  if (isDiscovering) {
+    return discoveredDevices;
+  }
 
-    isDiscovering = true;
-    discoveredDevices = [];
+  isDiscovering = true;
+  discoveredDevices = [];
 
-    const discovery = DeviceDiscovery();
+  return new Promise((resolve) => {
+    const socket = dgram.createSocket({ type: 'udp4', reuseAddr: true });
+    const foundAddresses = new Set();
+    const pendingDescriptions = [];
 
-    discovery.on('DeviceAvailable', (device) => {
-      device.deviceDescription()
-        .then(info => {
-          discoveredDevices.push({
-            uuid: device.host,
-            name: info.roomName || info.displayName,
-            model: info.modelName,
-            host: device.host,
-            deviceObject: device
-          });
-        })
-        .catch(err => {
-          console.error('Error getting device description:', err);
-        });
+    // SSDP M-SEARCH for Sonos ZonePlayer devices
+    const PLAYER_SEARCH = Buffer.from(
+      'M-SEARCH * HTTP/1.1\r\n' +
+      'HOST: 239.255.255.250:1900\r\n' +
+      'MAN: "ssdp:discover"\r\n' +
+      'MX: 3\r\n' +
+      'ST: urn:schemas-upnp-org:device:ZonePlayer:1\r\n\r\n'
+    );
+
+    socket.on('error', (err) => {
+      console.error('SSDP socket error:', err.message);
     });
 
-    // Give discovery 5 seconds to find devices
+    socket.on('message', (buffer, rinfo) => {
+      try {
+        const response = buffer.toString();
+        // Check for Sonos device response (case-insensitive to handle firmware variations)
+        if (response.match(/Sonos/i)) {
+          const addr = rinfo.address;
+          if (!foundAddresses.has(addr)) {
+            foundAddresses.add(addr);
+            console.log(`SSDP: Found Sonos device at ${addr}`);
+            const device = new Sonos(addr);
+            const descPromise = device.deviceDescription()
+              .then(info => {
+                // Use the permanent RINCON hardware UUID instead of IP address.
+                // IPs can change on DHCP renewal; RINCON IDs are stable forever.
+                const rinconUuid = info.UDN ? info.UDN.replace('uuid:', '') : addr;
+                discoveredDevices.push({
+                  uuid: rinconUuid,
+                  name: info.roomName || info.displayName || addr,
+                  model: info.modelName || 'Sonos',
+                  host: addr,
+                  deviceObject: device
+                });
+                console.log(`SSDP: Added speaker "${info.roomName || info.displayName}" (${rinconUuid}) at ${addr}`);
+              })
+              .catch(err => {
+                console.error(`SSDP: Error getting device description for ${addr}:`, err.message);
+              });
+            pendingDescriptions.push(descPromise);
+          }
+        }
+      } catch (err) {
+        console.error('SSDP: Error processing response:', err.message);
+      }
+    });
+
+    socket.bind(() => {
+      socket.setBroadcast(true);
+      // Send to both SSDP multicast and broadcast addresses
+      socket.send(PLAYER_SEARCH, 0, PLAYER_SEARCH.length, 1900, '239.255.255.250');
+      socket.send(PLAYER_SEARCH, 0, PLAYER_SEARCH.length, 1900, '255.255.255.255');
+      console.log('SSDP: Sent M-SEARCH packets, waiting for responses...');
+    });
+
+    // After 10 seconds, close socket and wait for any pending device descriptions
     setTimeout(() => {
-      isDiscovering = false;
-      resolve(discoveredDevices);
-    }, 5000);
+      try { socket.close(); } catch (e) { /* already closed */ }
+
+      // Wait up to 5 more seconds for pending deviceDescription() calls to finish
+      const descTimeout = new Promise(r => setTimeout(r, 5000));
+      Promise.race([Promise.allSettled(pendingDescriptions), descTimeout])
+        .then(() => {
+          console.log(`SSDP discovery complete: found ${discoveredDevices.length} speaker(s)`);
+          isDiscovering = false;
+          resolve(discoveredDevices);
+        });
+    }, 10000);
   });
+}
+
+/**
+ * Connect directly to a Sonos device by IP address, bypassing SSDP discovery.
+ * Use this when SSDP discovery fails (firewall, firmware changes, IP changes).
+ * @param {string} ipAddress - IP address of the Sonos device
+ * @returns {Promise<Object>} Speaker info object
+ */
+async function discoverByIp(ipAddress) {
+  console.log(`discoverByIp: connecting to ${ipAddress}:1400...`);
+  const device = new Sonos(ipAddress);
+
+  // 5-second timeout — deviceDescription() HTTP call hangs for 60+ seconds on unreachable devices
+  const timeoutMs = 5000;
+  const info = await Promise.race([
+    device.deviceDescription(),
+    new Promise((_, reject) =>
+      setTimeout(() => reject(new Error(`No response from ${ipAddress} after ${timeoutMs / 1000}s — device may be off or IP may have changed`)), timeoutMs)
+    )
+  ]);
+
+  // Use the permanent RINCON hardware UUID instead of IP address
+  const rinconUuid = info.UDN ? info.UDN.replace('uuid:', '') : ipAddress;
+
+  const speakerInfo = {
+    uuid: rinconUuid,
+    name: info.roomName || info.displayName || ipAddress,
+    model: info.modelName || 'Sonos',
+    host: ipAddress,
+    deviceObject: device
+  };
+
+  console.log(`discoverByIp: success — "${speakerInfo.name}" (${speakerInfo.uuid}) at ${ipAddress}`);
+
+  // Update or add to discoveredDevices so the rest of the system can use it
+  const existingIndex = discoveredDevices.findIndex(d => d.uuid === rinconUuid);
+  if (existingIndex >= 0) {
+    discoveredDevices[existingIndex] = speakerInfo;
+  } else {
+    discoveredDevices.push(speakerInfo);
+  }
+
+  return speakerInfo;
 }
 
 function getSpeakerByUuid(uuid) {
@@ -325,8 +426,56 @@ async function getPlaybackState(speakerUuid) {
   }
 }
 
+/**
+ * Discover speakers with IP-based fallback for saved speakers.
+ * Tries SSDP first, then connects directly by IP for any saved speakers
+ * not found via SSDP. This allows the alarm to work when the server runs
+ * in background mode (PM2) where macOS may not grant SSDP multicast access.
+ * @param {Array} savedSpeakers - Array of {speaker_uuid, speaker_name, speaker_ip} from DB
+ * @returns {Promise<Array>} Discovered devices
+ */
+async function discoverSpeakersWithFallback(savedSpeakers = []) {
+  // Try SSDP discovery first (may find zero speakers if running in background)
+  try {
+    await discoverSpeakers();
+  } catch (err) {
+    console.warn('SSDP discovery failed:', err.message);
+  }
+
+  for (const saved of savedSpeakers) {
+    const discovered = getSpeakerByUuid(saved.speaker_uuid);
+
+    if (discovered) {
+      // Speaker found via SSDP — sync new IP to database if it changed (handles DHCP reassignment)
+      if (discovered.host !== saved.speaker_ip) {
+        console.log(`IP changed for "${saved.speaker_name}": ${saved.speaker_ip} → ${discovered.host}`);
+        try {
+          await updateSpeakerIp(saved.speaker_uuid, discovered.host);
+        } catch (err) {
+          console.warn(`Failed to update IP for "${saved.speaker_name}":`, err.message);
+        }
+      }
+      continue; // Already found via SSDP, no IP fallback needed
+    }
+
+    // Not found via SSDP — try direct IP connection
+    if (!saved.speaker_ip) continue;
+    console.log(`"${saved.speaker_name}" not found via SSDP, trying IP ${saved.speaker_ip}...`);
+    try {
+      await discoverByIp(saved.speaker_ip);
+      console.log(`Connected to "${saved.speaker_name}" via IP fallback`);
+    } catch (err) {
+      console.error(`IP fallback failed for "${saved.speaker_name}" at ${saved.speaker_ip}:`, err.message);
+    }
+  }
+
+  return discoveredDevices;
+}
+
 module.exports = {
   discoverSpeakers,
+  discoverByIp,
+  discoverSpeakersWithFallback,
   getSpeakerByUuid,
   groupSpeakers,
   ungroupSpeakers,
@@ -334,5 +483,6 @@ module.exports = {
   playQueue,
   playUrl,
   stopPlayback,
-  getPlaybackState
+  getPlaybackState,
+  __resetForTesting
 };

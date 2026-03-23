@@ -1,10 +1,11 @@
 const rss = require('./rss');
-const { getAlarmConfig, markEpisodePlayed, clearOldPlayedEpisodes } = require('../db/models');
+const { getAlarmConfig, clearOldPlayedEpisodes } = require('../db/models');
 
 /**
  * Build the alarm playlist queue from RSS podcast feeds
- * Skips already-played episodes and marks new ones as played
- * @returns {Promise<Object>} Playlist info with queue and episode names
+ * Skips already-played episodes. Episodes are NOT marked as played here —
+ * the caller (scheduler) marks them after playback has successfully started.
+ * @returns {Promise<Object>} Playlist info with queue, episode names, and episodesToMark
  */
 async function buildPlaylistQueue() {
   try {
@@ -56,25 +57,11 @@ async function buildPlaylistQueue() {
       throw new Error('No playable episodes found in feeds');
     }
 
-    // Mark all queued episodes as played
-    console.log(`Marking ${episodesToMark.length} episodes as played...`);
-    for (const episode of episodesToMark) {
-      try {
-        await markEpisodePlayed(
-          episode.feedId,
-          episode.guid,
-          episode.title,
-          episode.audioUrl
-        );
-      } catch (markErr) {
-        console.warn(`Failed to mark episode as played: ${episode.title}`, markErr.message);
-      }
-    }
-
     return {
       queue,
       episodeNames,
       episodeMetadata,
+      episodesToMark,
       episodeCount: episodes.length,
       trackCount: queue.length
     };

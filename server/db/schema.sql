@@ -15,7 +15,8 @@ CREATE TABLE IF NOT EXISTS alarm_config (
 CREATE TABLE IF NOT EXISTS selected_speakers (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   speaker_name TEXT NOT NULL,
-  speaker_uuid TEXT NOT NULL UNIQUE
+  speaker_uuid TEXT NOT NULL UNIQUE,
+  speaker_ip TEXT
 );
 
 CREATE TABLE IF NOT EXISTS podcast_feeds (

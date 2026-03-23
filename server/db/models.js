@@ -95,13 +95,13 @@ function setSelectedSpeakers(speakers) {
           return;
         }
 
-        const stmt = db.prepare('INSERT INTO selected_speakers (speaker_name, speaker_uuid) VALUES (?, ?)');
+        const stmt = db.prepare('INSERT INTO selected_speakers (speaker_name, speaker_uuid, speaker_ip) VALUES (?, ?, ?)');
 
         let completed = 0;
         let hasError = false;
 
         speakers.forEach((speaker) => {
-          stmt.run([speaker.speaker_name, speaker.speaker_uuid], (err) => {
+          stmt.run([speaker.speaker_name, speaker.speaker_uuid, speaker.speaker_ip || null], (err) => {
             if (err && !hasError) {
               hasError = true;
               stmt.finalize();
@@ -359,11 +359,24 @@ function clearOldPlayedEpisodes(daysToKeep = 30) {
   });
 }
 
+function updateSpeakerIp(speakerUuid, newIp) {
+  return new Promise((resolve, reject) => {
+    const db = getDatabase();
+    db.run('UPDATE selected_speakers SET speaker_ip = ? WHERE speaker_uuid = ?',
+      [newIp, speakerUuid], function(err) {
+        db.close();
+        if (err) reject(err);
+        else resolve({ updated: this.changes });
+      });
+  });
+}
+
 module.exports = {
   getAlarmConfig,
   updateAlarmConfig,
   getSelectedSpeakers,
   setSelectedSpeakers,
+  updateSpeakerIp,
   getPodcastFeeds,
   addPodcastFeed,
   removePodcastFeed,

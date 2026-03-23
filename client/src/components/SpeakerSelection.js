@@ -7,6 +7,9 @@ function SpeakerSelection() {
   const [discovering, setDiscovering] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState('');
+  const [ipInput, setIpInput] = useState('');
+  const [addingByIp, setAddingByIp] = useState(false);
+  const [ipMessage, setIpMessage] = useState('');
 
   useEffect(() => {
     loadSelectedSpeakers();
@@ -33,6 +36,28 @@ function SpeakerSelection() {
       setSaveMessage('Error discovering speakers');
     } finally {
       setDiscovering(false);
+    }
+  };
+
+  const handleAddByIp = async () => {
+    if (!ipInput.trim()) return;
+    setAddingByIp(true);
+    setIpMessage('');
+
+    try {
+      const res = await speakers.discoverByIp(ipInput.trim());
+      const speaker = res.data.speaker;
+      // Add to available speakers if not already present
+      setAvailableSpeakers(prev => {
+        const exists = prev.some(s => s.uuid === speaker.uuid);
+        return exists ? prev : [...prev, speaker];
+      });
+      setIpMessage(`Found: ${speaker.name} (${speaker.model})`);
+      setIpInput('');
+    } catch (err) {
+      setIpMessage(`Could not connect to "${ipInput.trim()}" — check the IP address and ensure the speaker is on.`);
+    } finally {
+      setAddingByIp(false);
     }
   };
 
@@ -86,6 +111,39 @@ function SpeakerSelection() {
           </button>
         </div>
 
+        {/* Add by IP fallback */}
+        <div>
+          <p className="text-sm text-gray-500 mb-2">
+            If discovery doesn't find your speakers, add them by IP address:
+          </p>
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={ipInput}
+              onChange={(e) => setIpInput(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleAddByIp()}
+              placeholder="e.g. 192.168.1.100"
+              className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+            <button
+              onClick={handleAddByIp}
+              disabled={addingByIp || !ipInput.trim()}
+              className={`px-4 py-2 rounded-lg text-white text-sm font-semibold transition ${
+                addingByIp || !ipInput.trim()
+                  ? 'bg-gray-400 cursor-not-allowed'
+                  : 'bg-green-500 hover:bg-green-600'
+              }`}
+            >
+              {addingByIp ? 'Connecting...' : 'Add by IP'}
+            </button>
+          </div>
+          {ipMessage && (
+            <p className={`mt-2 text-sm ${ipMessage.startsWith('Found') ? 'text-green-600' : 'text-red-600'}`}>
+              {ipMessage}
+            </p>
+          )}
+        </div>
+
         {/* Available Speakers List */}
         {availableSpeakers.length > 0 && (
           <div>
@@ -125,10 +183,11 @@ function SpeakerSelection() {
               Currently Selected ({selectedSpeakers.length})
             </label>
             <div className="bg-gray-50 rounded-lg p-3">
-              <ul className="space-y-1">
+              <ul className="space-y-2">
                 {selectedSpeakers.map(speaker => (
-                  <li key={speaker.uuid} className="text-sm">
-                    {speaker.name}
+                  <li key={speaker.uuid}>
+                    <div className="text-sm font-medium">{speaker.name}</div>
+                    <div className="text-xs text-gray-400 font-mono">{speaker.uuid}</div>
                   </li>
                 ))}
               </ul>

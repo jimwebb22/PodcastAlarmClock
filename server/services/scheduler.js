@@ -1,5 +1,5 @@
 const cron = require('node-cron');
-const { getAlarmConfig, getSelectedSpeakers, addAlarmLog } = require('../db/models');
+const { getAlarmConfig, getSelectedSpeakers, addAlarmLog, markEpisodePlayed } = require('../db/models');
 const sonos = require('./sonos');
 const playlist = require('./playlist');
 
@@ -27,18 +27,22 @@ async function shouldTriggerToday(config) {
 }
 
 // Main alarm trigger function with fallback logic
-async function triggerAlarm() {
+async function triggerAlarm(forceTest = false) {
   console.log('Alarm triggered at', new Date().toISOString());
 
   try {
     const config = await getAlarmConfig();
     const selectedSpeakers = await getSelectedSpeakers();
 
-    // Check if alarm should trigger today
-    const shouldTrigger = await shouldTriggerToday(config);
-    if (!shouldTrigger) {
-      console.log('Alarm not scheduled for today');
-      return;
+    // Check if alarm should trigger today (skip when testing)
+    if (!forceTest) {
+      const shouldTrigger = await shouldTriggerToday(config);
+      if (!shouldTrigger) {
+        console.log('Alarm not scheduled for today');
+        return;
+      }
+    } else {
+      console.log('Test alarm triggered - bypassing schedule check');
     }
 
     if (selectedSpeakers.length === 0) {
@@ -46,20 +50,20 @@ async function triggerAlarm() {
     }
 
     console.log(`Building playlist for alarm...`);
-    const { queue, episodeNames, episodeMetadata } = await playlist.buildPlaylistWithRetry();
+    const { queue, episodeNames, episodeMetadata, episodesToMark } = await playlist.buildPlaylistWithRetry();
 
     console.log(`Built playlist with ${queue.length} items, ${episodeNames.length} episodes`);
 
-    // Discover speakers first
+    // Discover speakers with IP fallback (needed when running as PM2 background process)
     console.log('Discovering Sonos speakers...');
-    await sonos.discoverSpeakers();
+    await sonos.discoverSpeakersWithFallback(selectedSpeakers);
 
     // Try to group all configured speakers
     let coordinator = null;
     let groupedUuids = [];
 
-    // Use first speaker as coordinator
-    const coordinatorUuid = selectedSpeakers[0].speaker_uuid;
+    // Preferred coordinator is first selected speaker, but will fall back to first available
+    const preferredCoordinatorUuid = selectedSpeakers[0].speaker_uuid;
 
     // Filter to only configured speakers that were discovered
     const availableSpeakers = selectedSpeakers.filter(s =>
@@ -72,7 +76,23 @@ async function triggerAlarm() {
 
     const availableUuids = availableSpeakers.map(s => s.speaker_uuid);
 
+    // Use preferred coordinator if available, otherwise fall back to first available speaker
+    const coordinatorUuid = availableUuids.includes(preferredCoordinatorUuid)
+      ? preferredCoordinatorUuid
+      : availableUuids[0];
+
     console.log(`Found ${availableSpeakers.length}/${selectedSpeakers.length} configured speakers available`);
+
+    // Reset speaker state — leave any stale group from a previous failed run.
+    // Without this, all SOAP calls fail with UPnP 800 when speakers are stuck in a group.
+    console.log('Resetting speaker groups...');
+    for (const s of availableSpeakers) {
+      const spk = sonos.getSpeakerByUuid(s.speaker_uuid);
+      if (spk) {
+        try { await spk.deviceObject.leaveGroup(); } catch (e) { /* already standalone */ }
+      }
+    }
+    await new Promise(r => setTimeout(r, 1000));
 
     // Try grouping all available configured speakers
     try {
@@ -80,6 +100,9 @@ async function triggerAlarm() {
         console.log('Attempting to group speakers...');
         coordinator = await sonos.groupSpeakers(coordinatorUuid, availableUuids);
         groupedUuids = availableUuids;
+        // Wait for group to stabilize before issuing queue commands
+        console.log('Waiting for group to stabilize...');
+        await new Promise(r => setTimeout(r, 2000));
       } else {
         // Only one speaker available, no grouping needed
         coordinator = sonos.getSpeakerByUuid(coordinatorUuid);
@@ -107,6 +130,15 @@ async function triggerAlarm() {
     console.log('Starting playback...');
     await sonos.playQueue(coordinatorUuid, queue, episodeNames, episodeMetadata);
 
+    // Mark episodes as played AFTER successful playback start
+    for (const episode of episodesToMark) {
+      try {
+        await markEpisodePlayed(episode.feedId, episode.guid, episode.title, episode.audioUrl);
+      } catch (markErr) {
+        console.warn(`Failed to mark episode as played: ${episode.title}`, markErr.message);
+      }
+    }
+
     // Update state
     isPlaying = true;
     currentCoordinatorUuid = coordinatorUuid;
@@ -123,6 +155,15 @@ async function triggerAlarm() {
     console.log('Alarm playback started successfully');
   } catch (err) {
     console.error('Error triggering alarm:', err);
+
+    // Cleanup: ungroup all configured speakers so the next attempt starts clean
+    try {
+      const speakers = await getSelectedSpeakers();
+      for (const s of speakers) {
+        const spk = sonos.getSpeakerByUuid(s.speaker_uuid);
+        if (spk) { spk.deviceObject.leaveGroup().catch(() => {}); }
+      }
+    } catch (cleanupErr) { /* ignore cleanup errors */ }
 
     // Log failure
     try {

@@ -94,8 +94,8 @@ router.get('/status', async (req, res) => {
 // POST /api/alarm/test - Trigger alarm immediately (for testing)
 router.post('/test', async (req, res) => {
   try {
-    // Trigger alarm in background (don't wait for it to complete)
-    scheduler.triggerAlarm().catch(err => {
+    // Trigger alarm in background with forceTest=true to bypass schedule/enabled checks
+    scheduler.triggerAlarm(true).catch(err => {
       console.error('Test alarm failed:', err);
     });
 
