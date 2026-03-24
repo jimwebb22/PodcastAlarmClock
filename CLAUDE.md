@@ -32,8 +32,8 @@ This document provides context and guidance for Claude (or future developers) wo
 - **Key constraint preserved**: Server still runs as a foreground child process (not PM2/background), which is required for macOS to permit local network access
 
 **New Scripts:**
-- `scripts/build-macos-app.sh` — builds `PodcastAlarmClock.app` using Platypus CLI; re-run if project moves
-- `scripts/platypus-launcher.sh` — simplified server launcher (no ANSI/Terminal-specific code); logs to `logs/server.log`
+- `scripts/build-macos-app.sh` — deploys runtime files to `~/Library/Application Support/PodcastAlarmClock/runtime/` and builds `PodcastAlarmClock.app` to `/Applications/`; re-run after any code changes
+- `scripts/platypus-launcher.sh` — server launcher; runs Node from the deployed runtime dir (not from `~/Documents/`); logs to `~/Library/Logs/PodcastAlarmClock/server.log`
 - `scripts/build-icon.sh` — generates `PodcastAlarmClock.icns` from `client/public/logo512.png` using `sips`/`iconutil`
 
 **Why Platypus (not PM2, not Automator, not shell-script .app):**
@@ -52,12 +52,19 @@ sudo bash /tmp/install-platypus-cli.sh  # installs CLI from app bundle resources
 - Added `POST /api/speakers/discover-by-ip` endpoint for adding speakers by IP when SSDP auto-discovery fails
 - New UI input in `SpeakerSelection.js` component
 
+**TCC / Documents Permission Fix:**
+- **Problem**: macOS TCC prompted "would like to access your documents" on every alarm because Node.js reads source files (`require()`, `express.static`, `schema.sql`, etc.) from the project dir inside `~/Documents/`
+- **Solution**: `build-macos-app.sh` now deploys runtime files to `~/Library/Application Support/PodcastAlarmClock/runtime/` (TCC-exempt). The launcher `cd`s there instead of `~/Documents/`. The project repo stays in `~/Documents/` for git/development only.
+- **Result**: No Documents permission dialog. All runtime I/O is under `~/Library/`.
+
 **Maintenance:**
 - `start-server.command` — kept as Terminal fallback; adds window title escape sequence
 - PM2 config files kept in repo but PM2 is NOT used for production (network access issue)
+- App location: `/Applications/PodcastAlarmClock.app`
 - Logs when using app: `tail -f ~/Library/Logs/PodcastAlarmClock/server.log`
 - Database when using app: `~/Library/Application Support/PodcastAlarmClock/podcast-alarm.db`
-- Old DB location (backup, safe to delete after confirming app works): `<project>/podcast-alarm.db`
+- Runtime source: `~/Library/Application Support/PodcastAlarmClock/runtime/`
+- **After code changes**: run `bash scripts/build-macos-app.sh` to redeploy, then relaunch app
 
 ## Recent Updates (February 2026)
 
