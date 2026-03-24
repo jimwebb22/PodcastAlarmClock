@@ -1,5 +1,5 @@
 const rss = require('./rss');
-const { getAlarmConfig, clearOldPlayedEpisodes } = require('../db/models');
+const { getAlarmConfig, clearOldPlayedEpisodes, clearOldAlarmLogs } = require('../db/models');
 
 /**
  * Build the alarm playlist queue from RSS podcast feeds
@@ -19,6 +19,16 @@ async function buildPlaylistQueue() {
       }
     } catch (cleanupErr) {
       console.warn('Failed to clean up old played episodes:', cleanupErr.message);
+    }
+
+    // Clean up old alarm log records (older than 90 days)
+    try {
+      const cleanedLogs = await clearOldAlarmLogs(90);
+      if (cleanedLogs.deleted > 0) {
+        console.log(`Cleaned up ${cleanedLogs.deleted} old alarm log records`);
+      }
+    } catch (cleanupErr) {
+      console.warn('Failed to clean up old alarm logs:', cleanupErr.message);
     }
 
     // Fetch newest unplayed episode from each podcast feed
