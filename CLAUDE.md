@@ -559,37 +559,44 @@ curl -X DELETE http://localhost:3001/api/podcasts/played
 
 **Via Database:**
 ```bash
-sqlite3 podcast-alarm.db "DELETE FROM played_episodes;"
+sqlite3 "$HOME/Library/Application Support/PodcastAlarmClock/podcast-alarm.db" "DELETE FROM played_episodes;"
 ```
 
 **Via SQL with Selective Clearing:**
 ```bash
 # Clear all played episodes
-sqlite3 podcast-alarm.db "DELETE FROM played_episodes;"
+sqlite3 "$HOME/Library/Application Support/PodcastAlarmClock/podcast-alarm.db" "DELETE FROM played_episodes;"
 
 # Clear played episodes for a specific feed
-sqlite3 podcast-alarm.db "DELETE FROM played_episodes WHERE feed_id = 1;"
+sqlite3 "$HOME/Library/Application Support/PodcastAlarmClock/podcast-alarm.db" "DELETE FROM played_episodes WHERE feed_id = 1;"
 
 # View played episodes count
-sqlite3 podcast-alarm.db "SELECT feed_name, COUNT(*) FROM played_episodes pe JOIN podcast_feeds pf ON pe.feed_id = pf.id GROUP BY feed_name;"
+sqlite3 "$HOME/Library/Application Support/PodcastAlarmClock/podcast-alarm.db" "SELECT feed_name, COUNT(*) FROM played_episodes pe JOIN podcast_feeds pf ON pe.feed_id = pf.id GROUP BY feed_name;"
 ```
 
 ### Database Maintenance
 
+Database lives at `~/Library/Application Support/PodcastAlarmClock/podcast-alarm.db` when running via the app.
+For development (`npm start`), it's `./podcast-alarm.db` relative to the project dir.
+
+```bash
+DB="$HOME/Library/Application Support/PodcastAlarmClock/podcast-alarm.db"
+```
+
 **Backup database:**
 ```bash
-cp podcast-alarm.db podcast-alarm.db.backup
+cp "$DB" "$DB.backup"
 ```
 
 **Reset database completely:**
 ```bash
-rm podcast-alarm.db
-pm2 restart podcast-alarm-clock  # Will recreate with schema
+rm "$DB"
+# Relaunch PodcastAlarmClock.app — it will recreate the schema on startup
 ```
 
 **Query alarm logs:**
 ```bash
-sqlite3 podcast-alarm.db "SELECT datetime(triggered_at, 'unixepoch', 'localtime') as time, success, episodes_played FROM alarm_logs ORDER BY triggered_at DESC LIMIT 10;"
+sqlite3 "$DB" "SELECT datetime(triggered_at) as time, success, episodes_played FROM alarm_logs ORDER BY triggered_at DESC LIMIT 10;"
 ```
 
 ## Important Reminders

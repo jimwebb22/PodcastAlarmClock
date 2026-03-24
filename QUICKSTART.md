@@ -38,9 +38,12 @@ If you received this project as a zip file:
 
 ### Starting the Server
 
-1. **Double-click** `start-server.command`
-2. Wait a few seconds for the server to start
-3. Press Enter to close the window
+**Recommended:** Click `PodcastAlarmClock.app` in your Dock (or open `/Applications/PodcastAlarmClock.app`).
+- The alarm clock icon appears in the Dock while the server is running
+- No Terminal window required
+- Quit with Cmd+Q or right-click Dock icon → Quit
+
+**Fallback (Terminal):** Double-click `start-server.command` — requires the Terminal window to stay open (minimizing is fine).
 
 ### Opening the Alarm Clock
 
@@ -81,11 +84,10 @@ If you received this project as a zip file:
 
 ### Stopping the Server
 
-When you want to shut down the alarm system:
-1. **Double-click** `stop-server.command`
-2. Press Enter to close the window
+- **App**: Right-click the Dock icon → **Quit** (or Cmd+Q)
+- **Fallback**: Double-click `stop-server.command`
 
-**Note:** The server must be running for the alarm to work, so keep it running if you want automatic wake-ups.
+**Note:** The server must be running for the alarm to work. Keep `PodcastAlarmClock.app` running (Dock icon visible) for automatic wake-ups.
 
 ## Troubleshooting
 
@@ -113,25 +115,27 @@ When you want to shut down the alarm system:
 - Review the **TROUBLESHOOTING.md** file
 - Check the logs folder for error messages
 
-## Files You Can Double-Click
+## Files You Can Use
 
+- **/Applications/PodcastAlarmClock.app** - Start the server (Dock icon, recommended)
 - **install.command** - One-time setup (run this first)
-- **start-server.command** - Start the alarm server
-- **stop-server.command** - Stop the alarm server
+- **start-server.command** - Start the server in a Terminal window (fallback)
+- **stop-server.command** - Stop the server
 - **deploy.command** - Rebuild and restart after code changes
 
 ## Important Notes
 
-- **Keep the server running** for automatic alarms to work
-- **The server runs in the background** - you can close the terminal window
+- **Keep the server running** — `PodcastAlarmClock.app` must show in the Dock for alarms to trigger
 - **Your Mac must be awake and on** for the alarm to trigger
 - **Energy Saver settings**: Make sure your Mac doesn't sleep when you need alarms
+- **Auto-start on login**: System Settings → General → Login Items → add `/Applications/PodcastAlarmClock.app`
 
 ## First-Time Setup Checklist
 
 - [ ] Install Node.js
 - [ ] Run `install.command`
-- [ ] Run `start-server.command`
+- [ ] Run `bash scripts/build-macos-app.sh`
+- [ ] Open `/Applications/PodcastAlarmClock.app` (right-click → Open first time)
 - [ ] Open http://localhost:3001
 - [ ] Add at least one podcast RSS feed
 - [ ] Discover and select Sonos speakers

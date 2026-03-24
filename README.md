@@ -21,15 +21,21 @@ A local alarm clock system that plays podcasts from RSS feeds through Sonos spea
    - Enter your Mac password when prompted
    - Wait 2-5 minutes for installation to complete
 
-2. **Start the server**:
-   - Double-click `start-server.command`
+2. **Build and deploy the macOS app** (one-time setup):
+   - Run `bash scripts/build-macos-app.sh` in Terminal
+   - This deploys runtime files to `~/Library/` and installs `PodcastAlarmClock.app` in `/Applications/`
+
+3. **Launch the server**:
+   - Right-click `/Applications/PodcastAlarmClock.app` → **Open** → **Open** (first time only)
+   - Allow Local Network access when macOS prompts (required for Sonos)
+   - The alarm clock icon appears in your Dock — the server is running
    - Open http://localhost:3001 in your browser
 
-3. **Configure your alarm** (see Usage section below)
+4. **Configure your alarm** (see Usage section below)
 
-**That's it!** The installer handles everything automatically, including Node.js installation.
+**That's it!** Once set up, just click the Dock icon to start the server.
 
-📖 **New to this?** See [QUICKSTART.md](QUICKSTART.md) for detailed step-by-step instructions with screenshots and troubleshooting tips.
+📖 **New to this?** See [QUICKSTART.md](QUICKSTART.md) for detailed step-by-step instructions.
 
 ## Manual Installation (For Developers)
 
@@ -39,7 +45,7 @@ If you prefer to use the command line:
 
 - Node.js 16+
 - Sonos speakers on local network
-- PM2 (optional, for background operation): `npm install -g pm2`
+- Platypus (for building the macOS app): `brew install --cask platypus`
 
 ### Setup
 
@@ -58,13 +64,15 @@ If you prefer to use the command line:
    npm run build
    ```
 
-4. Start the server:
+4. Build and deploy the macOS app:
    ```bash
-   # Option 1: Foreground mode
-   npm start
+   # Deploys runtime files to ~/Library/ and builds app to /Applications/
+   # (requires Platypus — see Prerequisites)
+   bash scripts/build-macos-app.sh
 
-   # Option 2: Background mode with PM2
-   npm run pm2:start
+   # Then right-click /Applications/PodcastAlarmClock.app → Open → Open
+   # Or for a plain terminal session (dev only):
+   npm start
    ```
 
 5. Open http://localhost:3001 in your browser
@@ -118,81 +126,61 @@ Access the development UI at http://localhost:3000
 
 ### Initial Setup
 
-1. **Install PM2 (one-time setup):**
+1. **Build the React frontend:**
    ```bash
-   sudo npm install -g pm2
+   npm run build
    ```
 
-2. **Deploy the application:**
+2. **Build and deploy the macOS app** (requires Platypus):
    ```bash
-   npm run deploy
+   brew install --cask platypus
+   # Open Platypus.app → Settings → Install Command Line Tool
+   bash scripts/build-macos-app.sh
+   # Deploys runtime to ~/Library/ and installs app to /Applications/
    ```
-   This builds the React frontend and starts the server in the background with PM2.
+
+3. **First launch** — right-click `/Applications/PodcastAlarmClock.app` → **Open** → **Open**, then click **Allow** when macOS asks about Local Network access.
 
 ### Server Management
 
-#### Easy Way: Use the Command Files
+#### Recommended: Use the macOS App
 
-- **Start Server**: Double-click `start-server.command`
-- **Stop Server**: Double-click `stop-server.command`
+- **Start**: Click `/Applications/PodcastAlarmClock.app` (or Dock icon)
+- **Stop**: Right-click Dock icon → **Quit** (or Cmd+Q)
+- **Logs**: `tail -f ~/Library/Logs/PodcastAlarmClock/server.log`
 
-These scripts handle starting and stopping the server cleanly. The server runs in the background, so you can close terminal windows without stopping the alarm.
+The app runs the server directly — no Terminal window required. The alarm clock icon stays in the Dock while the server is running.
 
-#### Command Line: Use NPM Scripts
+> **Important:** Do NOT use PM2 for production. macOS blocks PM2-managed background processes from accessing the local network, which prevents Sonos speaker discovery.
 
-```bash
-npm run pm2:start      # Start the server
-npm run pm2:stop       # Stop the server
-npm run pm2:restart    # Restart the server
-npm run pm2:status     # Check server status
-npm run pm2:logs       # View server logs (Ctrl+C to exit)
-```
+#### Fallback: Terminal Window
 
-Or use PM2 commands directly:
-```bash
-pm2 status                          # View all PM2 processes
-pm2 logs podcast-alarm-clock        # View logs
-pm2 restart podcast-alarm-clock     # Restart service
-pm2 stop podcast-alarm-clock        # Stop service
-pm2 delete podcast-alarm-clock      # Remove completely
-```
+If needed, the server can be started in a Terminal window:
+- **Start**: Double-click `start-server.command`
+- **Stop**: Double-click `stop-server.command`
+
+This requires the Terminal window to remain open (minimizing is fine).
 
 ### After Mac Restart
 
-**By default**, the server does NOT auto-start when your Mac reboots. After restarting your Mac:
+The server does NOT auto-start by default. To enable auto-start on login:
 
-1. Double-click `start-server.command`, or
-2. Run `npm run pm2:start`
+1. System Settings → General → **Login Items**
+2. Click **+** and select `/Applications/PodcastAlarmClock.app`
 
-The server will start in the background and keep running until you stop it or restart your Mac again.
+The server will automatically start on every login with no Terminal window.
 
-### Optional: Auto-Start on Boot
+### Add to Dock (Persistent)
 
-If you want the server to automatically start when your Mac boots up:
+After launching the app once, right-click the Dock icon → **Options** → **Keep in Dock**.
 
-1. **Enable auto-start:**
-   ```bash
-   pm2 startup
-   ```
-   Follow the instructions it provides (will require `sudo`)
+### Rebuild / Redeploy After Code Changes
 
-2. **Save current process list:**
-   ```bash
-   pm2 save
-   ```
-
-Now the alarm server will automatically start whenever your Mac reboots.
-
-**To disable auto-start later:**
+After editing server code or the React client, redeploy by running:
 ```bash
-pm2 unstartup
+bash scripts/build-macos-app.sh
 ```
-
-**To completely remove the service:**
-```bash
-pm2 delete podcast-alarm-clock
-pm2 unstartup
-```
+This re-syncs the runtime files to `~/Library/Application Support/PodcastAlarmClock/runtime/` and rebuilds the app in `/Applications/`. Quit the app first, then relaunch after the script finishes.
 
 ## Project Structure
 
@@ -203,6 +191,10 @@ PodcastAlarmClock/
 │   ├── services/         # RSS parsing, Sonos, scheduler
 │   └── db/               # SQLite database
 ├── client/               # React web app
+├── scripts/
+│   ├── build-macos-app.sh    # Builds PodcastAlarmClock.app
+│   ├── platypus-launcher.sh  # Script run inside the .app
+│   └── build-icon.sh         # Generates .icns from logo512.png
 ├── .env.example          # Environment template
 └── package.json
 ```
@@ -211,8 +203,8 @@ PodcastAlarmClock/
 
 ### Alarm Not Triggering
 
-- Check PM2 status: `pm2 status`
-- View logs: `pm2 logs podcast-alarm-clock`
+- Check the app is running (alarm clock icon in Dock)
+- View logs: `tail -f ~/Library/Logs/PodcastAlarmClock/server.log`
 - Verify alarm is enabled in UI
 - Check that current day is selected
 - Verify at least one podcast feed is added
@@ -229,19 +221,18 @@ PodcastAlarmClock/
 - Verify the URL is a valid RSS feed (not a webpage)
 - Try opening the feed URL directly in a browser
 - Some feeds may be geo-restricted
-- Check logs for specific error messages
+- Check logs for specific error messages: `tail -f ~/Library/Logs/PodcastAlarmClock/server.log`
 
 ### Server Not Running After Restart
 
 - The server does NOT auto-start by default after Mac reboots
-- Run `start-server.command` or `npm run pm2:start` to restart it
-- To enable auto-start: See "Optional: Auto-Start on Boot" section above
+- Launch `/Applications/PodcastAlarmClock.app` to start it
+- To enable auto-start: System Settings → General → Login Items → add `/Applications/PodcastAlarmClock.app`
 
 ### Can't Stop Server
 
-- Use `stop-server.command` or `npm run pm2:stop`
-- Don't use `kill` commands directly (PM2 will restart the process)
-- To remove completely: `pm2 delete podcast-alarm-clock`
+- Right-click the Dock icon → **Quit**, or Cmd+Q while the app is focused
+- Fallback: Double-click `stop-server.command`
 
 ### No Episodes Available / Test Alarm Not Playing
 
@@ -252,10 +243,10 @@ PodcastAlarmClock/
   ```
 - Or clear the database directly:
   ```bash
-  sqlite3 podcast-alarm.db "DELETE FROM played_episodes;"
+  sqlite3 ~/Library/Application\ Support/PodcastAlarmClock/podcast-alarm.db "DELETE FROM played_episodes;"
   ```
 - After clearing, test the alarm again - it should find fresh episodes
-- Check logs to verify: `pm2 logs podcast-alarm-clock`
+- Check logs to verify: `tail -f ~/Library/Logs/PodcastAlarmClock/server.log`
 
 ### Queue Not Advancing to Next Episode
 
@@ -290,7 +281,8 @@ PodcastAlarmClock/
 - `GET /api/alarm/logs` - Get recent alarm logs
 
 ### Speakers
-- `GET /api/speakers/discover` - Discover Sonos speakers
+- `GET /api/speakers/discover` - Discover Sonos speakers via SSDP
+- `POST /api/speakers/discover-by-ip` - Add a speaker by IP address (body: `{ip}`)
 - `GET /api/speakers/selected` - Get selected speakers
 - `POST /api/speakers/selected` - Save selected speakers
 
