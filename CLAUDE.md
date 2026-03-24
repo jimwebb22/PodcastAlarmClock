@@ -21,6 +21,44 @@ This document provides context and guidance for Claude (or future developers) wo
 - Scheduling: node-cron
 - Deployment: PM2
 
+## Recent Updates (March 2026)
+
+### Session: March 23, 2026 - macOS App Wrapper & Speaker IP Discovery
+
+**macOS App Wrapper (Platypus):**
+- **Problem**: Server required Terminal window to stay open; PM2 background mode blocked by macOS Local Network Privacy (Sonos SSDP discovery fails for processes not descended from an authorized app bundle)
+- **Solution**: Built `PodcastAlarmClock.app` using Platypus — a native Cocoa .app wrapper that runs the Node server as a direct child process with its own bundle identity (`com.local.podcast-alarm-clock`) and Local Network permission entry
+- **Result**: Proper Dock icon (alarm clock), no Terminal window required, Cmd+Q stops server cleanly, can be added to Login Items for auto-start
+- **Key constraint preserved**: Server still runs as a foreground child process (not PM2/background), which is required for macOS to permit local network access
+
+**New Scripts:**
+- `scripts/build-macos-app.sh` — builds `PodcastAlarmClock.app` using Platypus CLI; re-run if project moves
+- `scripts/platypus-launcher.sh` — simplified server launcher (no ANSI/Terminal-specific code); logs to `logs/server.log`
+- `scripts/build-icon.sh` — generates `PodcastAlarmClock.icns` from `client/public/logo512.png` using `sips`/`iconutil`
+
+**Why Platypus (not PM2, not Automator, not shell-script .app):**
+- PM2 daemon children lose Terminal.app process ancestry → macOS denies local network access
+- Automator/AppleScript `.app` → requires Automation permission to send events to Terminal (error -1743)
+- Platypus creates a real Mach-O Cocoa app with its own bundle ID → gets its own Local Network Privacy entry
+
+**Platypus Installation (required to rebuild app):**
+```bash
+brew install --cask platypus
+sudo bash /tmp/install-platypus-cli.sh  # installs CLI from app bundle resources
+# Or via GUI: Platypus.app → Settings → Install Command Line Tool
+```
+
+**Speaker Discovery by IP:**
+- Added `POST /api/speakers/discover-by-ip` endpoint for adding speakers by IP when SSDP auto-discovery fails
+- New UI input in `SpeakerSelection.js` component
+
+**Maintenance:**
+- `start-server.command` — kept as Terminal fallback; adds window title escape sequence
+- PM2 config files kept in repo but PM2 is NOT used for production (network access issue)
+- Logs when using app: `tail -f ~/Library/Logs/PodcastAlarmClock/server.log`
+- Database when using app: `~/Library/Application Support/PodcastAlarmClock/podcast-alarm.db`
+- Old DB location (backup, safe to delete after confirming app works): `<project>/podcast-alarm.db`
+
 ## Recent Updates (February 2026)
 
 ### Session: February 9, 2026 - Queue Playback Fix & Infrastructure
@@ -427,7 +465,7 @@ DATABASE_PATH=./podcast-alarm.db
 - Check alarm enabled (toggle ON)
 - Verify correct weekdays selected (must have at least one day)
 - Check system time and timezone
-- Review logs: `tail -f logs/server.log`
+- Review logs: `tail -f ~/Library/Logs/PodcastAlarmClock/server.log`
 
 **"Playback fails on Sonos"**
 - Check speakers powered on and network connected
@@ -491,6 +529,17 @@ All core features implemented:
 - Internet radio integration
 
 ## Maintenance Tasks
+
+### Log and Database Paths (Platypus App)
+
+When running via `PodcastAlarmClock.app`:
+- **Logs:** `~/Library/Logs/PodcastAlarmClock/server.log` — rotated at 5 MB (previous kept as `server.log.1`)
+- **Database:** `~/Library/Application Support/PodcastAlarmClock/podcast-alarm.db`
+- **One-time migration:** On first launch after this update, the old `<project>/podcast-alarm.db` is automatically copied to the new location. The original is kept as a backup and can be deleted once the app is confirmed working.
+
+When running via Terminal (`npm start` or `start-server.command`):
+- **Logs:** stdout (terminal output)
+- **Database:** `./podcast-alarm.db` (relative to project dir, from `.env`)
 
 ### Clearing Played Episodes (Testing/Development)
 
