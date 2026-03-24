@@ -359,6 +359,30 @@ function clearOldPlayedEpisodes(daysToKeep = 30) {
   });
 }
 
+function clearOldAlarmLogs(daysToKeep = 90) {
+  return new Promise((resolve, reject) => {
+    const db = getDatabase();
+    // Note: schema declares triggered_at as INTEGER but addAlarmLog inserts
+    // new Date().toISOString() — so SQLite stores an ISO 8601 string like
+    // "2026-03-24T10:30:00.000Z" (SQLite doesn't coerce types).
+    // datetime(triggered_at) parses the ISO string and normalises the 'T'/'Z'
+    // so comparison against datetime('now', '-N days') works correctly.
+    const sql = `
+      DELETE FROM alarm_logs
+      WHERE datetime(triggered_at) < datetime('now', '-' || ? || ' days')
+    `;
+
+    db.run(sql, [daysToKeep], function(err) {
+      db.close();
+      if (err) {
+        reject(err);
+        return;
+      }
+      resolve({ deleted: this.changes });
+    });
+  });
+}
+
 function updateSpeakerIp(speakerUuid, newIp) {
   return new Promise((resolve, reject) => {
     const db = getDatabase();
@@ -388,5 +412,6 @@ module.exports = {
   getPlayedEpisodesForFeed,
   getAllPlayedEpisodes,
   clearPlayedEpisodes,
-  clearOldPlayedEpisodes
+  clearOldPlayedEpisodes,
+  clearOldAlarmLogs
 };
