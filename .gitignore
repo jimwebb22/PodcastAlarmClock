@@ -4,6 +4,9 @@
 # Dependencies
 node_modules/
 
+# React production build
+client/build/
+
 # Environment variables
 .env
 .env.local

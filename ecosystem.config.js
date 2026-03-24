@@ -1,3 +1,6 @@
+// Optional PM2 configuration — for users who want background process management.
+// NOTE: On macOS, PM2-managed processes are blocked from accessing the local network,
+// which prevents Sonos speaker discovery. Use the PodcastAlarmClock.app wrapper instead.
 module.exports = {
   apps: [{
     name: 'podcast-alarm-clock',
