@@ -61,5 +61,5 @@ fi
 [ ! -d "node_modules" ] && npm install >> "$LOG" 2>&1
 
 export NODE_ENV=production
-exec /usr/local/bin/node server/index.js \
+exec node server/index.js \
     >> "$LOG" 2>&1

@@ -65,6 +65,7 @@ function clearAllLogs() {
 
 beforeAll(() => initTestDb());
 afterEach(() => clearAllLogs());
+afterAll(() => require('fs').unlinkSync(TEST_DB));
 
 describe('clearOldAlarmLogs', () => {
   test('deletes logs older than daysToKeep', async () => {
