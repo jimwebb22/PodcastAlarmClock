@@ -7,7 +7,6 @@ const TEST_DB = path.join(os.tmpdir(), `test-alarm-${Date.now()}.db`);
 process.env.DATABASE_PATH = TEST_DB;
 
 // Re-require after setting env so DB_PATH picks up the override
-const { getDatabase } = require('./database');
 const { clearOldAlarmLogs } = require('./models');
 
 // Helper: open test DB and run schema
