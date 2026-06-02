@@ -197,29 +197,8 @@ else
 fi
 echo ""
 
-# Step 5: Install PM2
-echo -e "${BOLD}Step 5/7: Installing PM2 process manager...${NC}"
-if command -v pm2 &> /dev/null; then
-    PM2_VERSION=$(pm2 -v)
-    echo -e "${GREEN}✓ PM2 is already installed (v${PM2_VERSION})${NC}"
-else
-    echo -e "${BLUE}Installing PM2 globally (requires administrator password)...${NC}"
-    echo ""
-
-    if sudo npm install -g pm2; then
-        echo ""
-        echo -e "${GREEN}✓ PM2 installed successfully${NC}"
-    else
-        echo ""
-        echo -e "${RED}✗ Failed to install PM2${NC}"
-        echo -e "${YELLOW}⚠️  You can still use the app, but the server will run in foreground mode${NC}"
-        echo -e "${YELLOW}   To install PM2 later, run: sudo npm install -g pm2${NC}"
-    fi
-fi
-echo ""
-
-# Step 6: Build React client
-echo -e "${BOLD}Step 6/7: Building React application...${NC}"
+# Step 5: Build React client
+echo -e "${BOLD}Step 5/6: Building React application...${NC}"
 echo -e "${BLUE}This may take a few minutes...${NC}"
 cd client
 npm run build --silent
@@ -227,8 +206,8 @@ cd ..
 echo -e "${GREEN}✓ React application built${NC}"
 echo ""
 
-# Step 7: Make command files executable
-echo -e "${BOLD}Step 7/7: Authorizing command files...${NC}"
+# Step 6: Make command files executable
+echo -e "${BOLD}Step 6/6: Authorizing command files...${NC}"
 chmod +x start-server.command
 chmod +x stop-server.command
 chmod +x deploy.command
@@ -261,9 +240,9 @@ echo "════════════════════════�
 echo ""
 echo -e "${BLUE}${BOLD}Helpful Tips:${NC}"
 echo ""
-echo "  • The server runs in the background with PM2"
-echo "  • You can close this window after starting the server"
-echo "  • Logs are stored in the 'logs' folder"
+echo "  • For the best macOS experience, build the native app:"
+echo "    bash scripts/build-macos-app.sh"
+echo "  • Logs: ~/Library/Logs/PodcastAlarmClock/server.log"
 echo "  • Need help? Check README.md for documentation"
 echo ""
 echo "═══════════════════════════════════════════════════════"

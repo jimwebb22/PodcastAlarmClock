@@ -42,9 +42,9 @@ function AlarmConfig() {
     setSaveMessage('');
 
     try {
-      await alarm.updateConfig(localConfig);
-      setConfig(localConfig);
-      setSaveMessage('Configuration saved successfully!');
+      await alarm.updateConfig({ ...localConfig, enabled: 1 });
+      setConfig({ ...localConfig, enabled: 1 });
+      setSaveMessage('Configuration saved — alarm is now active!');
       setTimeout(() => setSaveMessage(''), 3000);
     } catch (err) {
       console.error('Error saving config:', err);

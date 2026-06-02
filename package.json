@@ -1,8 +1,11 @@
 {
   "name": "podcast-alarm-clock",
   "version": "1.0.0",
-  "description": "A local alarm clock system that plays Spotify podcasts and music through Sonos speakers",
+  "description": "A local alarm clock that plays podcast episodes from RSS feeds through Sonos speakers",
   "main": "index.js",
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "directories": {
     "doc": "docs"
   },
@@ -11,6 +14,7 @@
     "dev": "nodemon server/index.js",
     "test": "jest",
     "build": "cd client && npm run build",
+    "setup": "cp -n .env.example .env 2>/dev/null || true; npm install; npm run build",
     "postinstall": "cd client && npm install",
     "prod": "NODE_ENV=production node server/index.js",
     "deploy": "npm run build && pm2 start ecosystem.config.js",
@@ -29,7 +33,6 @@
     "dotenv": "^17.2.3",
     "express": "^5.2.1",
     "node-cron": "^4.2.1",
-    "node-schedule": "^2.1.1",
     "rss-parser": "^3.13.0",
     "sonos": "^1.14.2",
     "sqlite3": "^5.1.7"
