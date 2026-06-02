@@ -50,7 +50,7 @@ npm run dev
 cd client && npm start
 ```
 
-## macOS App Wrapper (Optional)
+## macOS App Wrapper (Recommended on macOS)
 
 For a native macOS experience with a Dock icon and no Terminal window required, build the app using [Platypus](https://sveinbjorn.org/platypus):
 
@@ -155,8 +155,10 @@ The system tracks played episodes to avoid repeats. Clear the history to replay:
 
 ```bash
 curl -X DELETE http://localhost:3001/api/podcasts/played
-# or directly:
+# or directly (dev / npm start — DB in project root):
 sqlite3 podcast-alarm.db "DELETE FROM played_episodes;"
+# or when running the macOS app (DB under ~/Library):
+sqlite3 ~/Library/Application\ Support/PodcastAlarmClock/podcast-alarm.db "DELETE FROM played_episodes;"
 ```
 
 ### Server Not Restarting After Reboot (macOS App)
